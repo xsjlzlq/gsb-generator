@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 打包残留
+build/
+dist/
+*.spec
+
+# 日志
+logs/
+
+# 临时/测试输出
+*.log

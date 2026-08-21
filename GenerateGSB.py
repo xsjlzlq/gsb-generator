@@ -3795,10 +3795,90 @@ def parse_yushe_fbfmc(fbfmc):
     return zhen, cun, zumin
 
 
+def _strip_admin_suffix(name):
+    """去掉名称末尾的 街道/乡/镇/村/组 等行政区划后缀（最长优先），剥空则返回原值"""
+    s = str(name)
+    for suf in ('街道', '乡', '镇', '村', '组'):
+        if s.endswith(suf) and len(s) > len(suf):
+            return s[:-len(suf)]
+    return s
+
+
 def _clean_filename(name):
     """清理文件名中的非法字符"""
     import re
     return re.sub(r'[\\/:*?"<>|\r\n\t]', '', str(name)).strip()
+
+
+# 常用纸张尺寸（paperSize 编码 -> (宽mm, 高mm)），用于计算分页容量
+_PAPER_SIZE_MM = {
+    1: (215.9, 279.4),    # Letter
+    5: (215.9, 355.6),    # Legal
+    8: (297, 420),        # A3
+    9: (210, 297),        # A4
+    11: (210, 297),       # A4 Small
+    12: (210, 297),       # A4 Transverse
+}
+
+
+def _insert_page_breaks(ws, hh_spans):
+    """
+    在每户数据块（hh_spans，Excel行号区间列表）边界插入水平分页符，
+    保证每户合并单元格不会跨页被切断。
+    依据页面纸张、页边距与行高计算每页可容纳的数据行数：
+    第1页还需扣除表头（第1-8行）高度；第2页起表头不再重复。
+    """
+    from openpyxl.worksheet.pagebreak import Break
+
+    paper_size = ws.page_setup.paperSize
+    if paper_size not in _PAPER_SIZE_MM:
+        logger.warning(f"榆社县公示表：未知纸张尺寸(paperSize={paper_size})，跳过插入分页符")
+        return
+    w_mm, h_mm = _PAPER_SIZE_MM[paper_size]
+    if ws.page_setup.orientation == 'landscape':
+        w_mm, h_mm = h_mm, w_mm
+
+    margins = ws.page_margins
+    # 页面高度换算为磅(1mm = 72/25.4 pt)
+    page_pt = h_mm / 25.4 * 72
+    body_pt = page_pt - (margins.top + margins.bottom) * 72
+
+    default_h = ws.sheet_format.defaultRowHeight or 15
+    row_h = {r: (ws.row_dimensions[r].height if r in ws.row_dimensions else default_h) for r in range(1, 9)}
+    header_pt = sum(row_h.values())                # 首页表头 rows1-8
+    repeat_pt = sum(row_h[r] for r in (6, 7, 8))   # 重复标题行 rows6-8
+
+    data_row_pt = ws.row_dimensions[9].height if 9 in ws.row_dimensions else 36
+    if not data_row_pt:
+        data_row_pt = 36
+
+    cap1 = int((body_pt - header_pt) // data_row_pt)
+    cap2 = int((body_pt - repeat_pt) // data_row_pt)
+    if cap1 < 1 or cap2 < 1:
+        logger.warning(f"榆社县公示表：计算出的分页容量异常(cap1={cap1}, cap2={cap2})，跳过插入分页符")
+        return
+
+    breaks = []
+    used = 0
+    cap = cap1
+    for sr, er in hh_spans:
+        size = er - sr + 1
+        if used + size <= cap:
+            used += size
+            continue
+        # 当前页放不下此户，需要开启新页
+        if not (used == 0 and size > cap2):
+            # 例外：首页第一户即超过单页容量时无法避免跨页，只能放在首页
+            breaks.append(sr)
+        used = size
+        cap = cap2
+        if size > cap2:
+            logger.warning(f"榆社县公示表：第{sr}-{er}行户块共{size}行，超过单页容量({cap2}行)，该户合并单元格将跨页")
+    for brk in breaks:
+        # OOXML <brk> 的 id 为 0 基行号（分页符显示在 1 基行 id+1 上方），
+        # 传入的 brk 是 1 基行号，需减 1 使分页符位于户块开始行的上方
+        ws.row_breaks.append(Break(id=brk - 1))
+    logger.debug(f"榆社县公示表：按每户边界插入 {len(breaks)} 个分页符，第1页容量={cap1}行，后续页容量={cap2}行")
 
 
 def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory):
@@ -3849,6 +3929,19 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
             return int(float(v))
         except (TypeError, ValueError):
             return None
+
+    def _fmt_phone(v):
+        """格式化电话：float整数转str、去首尾空白；空值返回None"""
+        if v is None:
+            return None
+        if isinstance(v, float):
+            if pd.isna(v):
+                return None
+            v = int(v) if v.is_integer() else round(v)
+        s = str(v).strip()
+        if s.lower() in ('nan', 'none', ''):
+            return None
+        return s
 
     family_conv = {'CBFBM': str,
                    'CYXM': conv_str_none, 'CYXB': conv_str_none, 'YHZGX': conv_str_none,
@@ -3902,6 +3995,9 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
         total_p = 0.0
         total_r = 0.0
 
+        # 记录户主/本人成员行（写入承包方电话），用于签字版备注列
+        hz_phone_rows = []
+
         for code in hh_codes:
             fam = group_family[group_family['CBFBM'] == code]
             lnd = group_land[group_land['CBFBM'] == code]
@@ -3934,33 +4030,38 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
                     row[1] = str(code)[-4:]        # A 编号
                     row[2] = cbfmc_val             # B 承包方（代表）
                     row[3] = member_count          # C:D 成员数
-                    row[11] = land_count           # K 地块数
-                    row[16] = scmjm_sum            # P 实测总面积
-                    row[18] = htmjm_sum            # R 合同总面积
+                    row[12] = land_count           # L 地块数
+                    row[17] = scmjm_sum            # Q 实测总面积
+                    row[19] = htmjm_sum            # S 合同总面积
                 if f is not None:
                     row[5] = f['CYXM'] or ''       # E 姓名
-                    row[6] = xb_code_to_name(f['CYXB'])      # F 性别
-                    row[7] = _calc_age_from_id(f['CYZJHM'])  # G 年龄
-                    row[8] = yhzgx_code_to_name(f['YHZGX'])  # H 与承包方代表关系
-                    row[9] = f['CYBZSM'] or f['CYBZ'] or ''  # I:J 成员备注
+                    row[6] = f['CYZJHM'] or ''     # F 成员证件号
+                    row[7] = xb_code_to_name(f['CYXB'])      # G 性别
+                    row[8] = _calc_age_from_id(f['CYZJHM'])  # H 年龄
+                    row[9] = yhzgx_code_to_name(f['YHZGX'])  # I 与承包方代表关系
+                    row[10] = f['CYBZSM'] or f['CYBZ'] or ''  # J:K 成员备注
+                    if f.get('YHZGX') in ('01', '02'):
+                        phone_col = 'LXDH_y' if 'LXDH_y' in f.index else ('LXDH' if 'LXDH' in f.index else None)
+                        if phone_col:
+                            hz_phone_rows.append((9 + block_start + i, f[phone_col]))
                 if l is not None:
-                    row[12] = l['DKMC'] or ''      # L:M 地块名称
-                    row[14] = str(l['DKBM'])[-5:]  # N 地块编码
+                    row[13] = l['DKMC'] or ''      # M:N 地块名称
+                    row[15] = str(l['DKBM'])[-5:]  # O 地块编码
                     scmjm = to_num(l['SCMJM']) if 'SCMJM' in l.index else None
                     if scmjm is None:
                         scmjm = to_num(l['HTMJM'])
-                    row[15] = scmjm                # O 实测面积
-                    row[17] = to_num(l['HTMJM'])   # Q 合同面积
-                    row[19] = "种植业"             # S 土地用途
-                    row[20] = dklb_code_to_name(l['DKLB'])          # T 地块类别
-                    row[21] = tdlylx_code_to_name(l['TDLYLX'])      # U 土地利用类型
-                    row[22] = dldj_code_to_name(l['DLDJ'])          # V 地力等级
-                    row[23] = sfjbnt_code_to_name(l['SFJBNT'])      # W 是否基本农田
-                    row[24] = l['DKDZ'] or ''      # X 东至
-                    row[25] = l['DKNZ'] or ''      # Y 南至
-                    row[26] = l['DKXZ'] or ''      # Z 西至
-                    row[27] = l['DKBZ'] or ''      # AA 北至
-                    row[28] = l['DKBZXX'] or ''    # AB 备注
+                    row[16] = scmjm                # P 实测面积
+                    row[18] = to_num(l['HTMJM'])   # R 合同面积
+                    row[20] = "种植业"             # T 土地用途
+                    row[21] = dklb_code_to_name(l['DKLB'])          # U 地块类别
+                    row[22] = tdlylx_code_to_name(l['TDLYLX'])      # V 土地利用类型
+                    row[23] = dldj_code_to_name(l['DLDJ'])          # W 地力等级
+                    row[24] = sfjbnt_code_to_name(l['SFJBNT'])      # X 是否基本农田
+                    row[25] = l['DKDZ'] or ''      # Y 东至
+                    row[26] = l['DKNZ'] or ''      # Z 南至
+                    row[27] = l['DKXZ'] or ''      # AA 西至
+                    row[28] = l['DKBZ'] or ''      # AB 北至
+                    row[29] = l['DKBZXX'] or ''    # AC 备注
                 data_rows.append(row)
             hh_spans.append((9 + block_start, 9 + len(data_rows) - 1))
             total_member += member_count
@@ -4020,11 +4121,11 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
             for hm in header_merges:
                 ws.merge_cells(hm)
 
-            # 填写表头（按md文档单元格标记：D5=乡镇名；H5=村名；J5=组名，默认"/"；O5=FBFBM）
-            ws.cell(5, 4).value = zhen              # D5 乡镇名
-            ws.cell(5, 8).value = cun               # H5 村名
-            ws.cell(5, 10).value = zumin if zumin else '/'   # J5 组名，默认"/"
-            ws.cell(5, 15).value = str(fbfbm)       # O5 FBFBM
+            # 填写表头（模板行5重设计后：D5=乡镇名；I5=村名；K5=组名，默认"/"；P5=FBFBM）
+            ws.cell(5, 4).value = _strip_admin_suffix(zhen)   # G5 乡镇名(镇(乡))
+            ws.cell(5, 9).value = _strip_admin_suffix(cun)    # I5 村名
+            ws.cell(5, 11).value = _strip_admin_suffix(zumin) if zumin else '/'   # K5 组名，默认"/"
+            ws.cell(5, 16).value = str(fbfbm)       # P5 FBFBM
 
             # 写入数据
             current = 9
@@ -4034,15 +4135,17 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
                 current += 1
             data_end = current - 1
 
-            # 每户合并 A/B/C:D/K/P/R
+            # 每户合并 A/B/C:D/K/P/R（C:D 成员数列无论块高多少都需合并，单行户也横跨 C:D）
             for sr, er in hh_spans:
                 if er > sr:
-                    for cols in [(1, 1), (2, 2), (3, 4), (11, 11), (16, 16), (18, 18)]:
+                    for cols in [(1, 1), (2, 2), (3, 4), (12, 12), (17, 17), (19, 19)]:
                         ws.merge_cells(start_row=sr, start_column=cols[0], end_row=er, end_column=cols[1])
+                else:
+                    ws.merge_cells(start_row=sr, start_column=3, end_row=sr, end_column=4)
             # 每行合并 I:J 与 L:M
             for r in range(9, data_end + 1):
-                ws.merge_cells(start_row=r, start_column=9, end_row=r, end_column=10)
-                ws.merge_cells(start_row=r, start_column=12, end_row=r, end_column=13)
+                ws.merge_cells(start_row=r, start_column=10, end_row=r, end_column=11)
+                ws.merge_cells(start_row=r, start_column=13, end_row=r, end_column=14)
 
             # 应用数据行样式
             for r in range(9, data_end + 1):
@@ -4058,9 +4161,21 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
             # 编号/地块编码文本格式，面积保留两位小数
             for r in range(9, data_end + 1):
                 ws.cell(r, 1).number_format = '@'
-                ws.cell(r, 14).number_format = '@'
-                for c in (15, 16, 17, 18):
+                ws.cell(r, 6).number_format = '@'   # 成员证件号 文本
+                ws.cell(r, 15).number_format = '@'  # 地块编码 文本
+                for c in (16, 17, 18, 19):
                     ws.cell(r, c).number_format = '0.00'
+
+            # 签字版：备注列写入户主/本人行对应的承包方电话，字体设为白色（隐藏显示，数值保留）
+            if version == '签字版' and hz_phone_rows:
+                for _r, _v in hz_phone_rows:
+                    p = _fmt_phone(_v)
+                    if not p:
+                        continue
+                    cell = ws.cell(_r, 29)
+                    cell.value = p
+                    cell.number_format = '@'
+                    cell.font = Font(color='FFFFFFFF')   # 白字隐藏
 
             # 合计行（第19行样式+值，重写汇总数值）
             sr_tail = data_end + 1
@@ -4076,9 +4191,9 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
                 cell.value = tail_values[(19, c)]
             ws.cell(sr_tail, 1).value = '合计'
             ws.cell(sr_tail, 3).value = total_member
-            ws.cell(sr_tail, 11).value = total_land
-            ws.cell(sr_tail, 16).value = round(total_p, 2)
-            ws.cell(sr_tail, 18).value = round(total_r, 2)
+            ws.cell(sr_tail, 12).value = total_land
+            ws.cell(sr_tail, 17).value = round(total_p, 2)
+            ws.cell(sr_tail, 19).value = round(total_r, 2)
 
             # 页脚行（第20-21行）
             f1, f2 = sr_tail + 1, sr_tail + 2
@@ -4104,6 +4219,22 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
             ws.row_dimensions[sr_tail].height = row_heights.get(19)
             ws.row_dimensions[f1].height = row_heights.get(20)
             ws.row_dimensions[f2].height = row_heights.get(21)
+
+            # 在每户边界插入分页符，保证合并单元格不分页
+            _insert_page_breaks(ws, hh_spans)
+
+            # 设置第6-8行为重复标题行（每页顶部打印列头）
+            ws.print_title_rows = '6:8'
+
+            # 输出前对每个单元格再次设置一遍边框，确保合并单元格各边边框完整打印
+            tail_src = {sr_tail: 19, f1: 20, f2: 21}
+            for r in range(1, ws.max_row + 1):
+                if 9 <= r <= data_end:
+                    for c in range(1, ncols + 1):
+                        ws.cell(r, c).border = data_style[c]['border']
+                elif r in tail_src:
+                    for c in range(1, ncols + 1):
+                        ws.cell(r, c).border = tail_styles[(tail_src[r], c)]['border']
 
             wb.save(output_file)
             logger.info(f"榆社县公示表已保存到: {output_file}")
@@ -4140,7 +4271,7 @@ def generate_yushe_gsb_only(mdb_file_path, shp_file_path, output_directory):
             cbf = dfs['CBF']
             cbht = dfs['CBHT']
             cbht_selected = cbht[['CBFBM', 'CBDKZS']]
-            merged_cbf_jtcy_cbf = pd.merge(cbf_jtcy, cbf[['CBFMC', 'CBFBM', 'CBFCYSL']], on='CBFBM', how='left')
+            merged_cbf_jtcy_cbf = pd.merge(cbf_jtcy, cbf[['CBFMC', 'CBFBM', 'CBFCYSL', 'LXDH']], on='CBFBM', how='left')
             merged_cbf_jtcy_cbf = pd.merge(merged_cbf_jtcy_cbf, cbht_selected, on='CBFBM', how='left')
             merged_cbf_jtcy_cbf['CBFBM_14'] = merged_cbf_jtcy_cbf['CBFBM'].str[:14]
             fbf = dfs['FBF']

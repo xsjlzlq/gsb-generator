@@ -3785,7 +3785,7 @@ def parse_yushe_fbfmc(fbfmc):
     if idx != -1:
         cun = name[:idx + 1]
         name = name[idx + 1:]
-    for suffix in ('股份经济合作社', '经济合作社', '合作社', '村民委员会', '村委会'):
+    for suffix in ('股份经济合作社', '集体经济组织','经济合作社', '合作社', '村民委员会', '村委会'):
         if name.endswith(suffix):
             name = name[:-len(suffix)]
             break
@@ -4078,7 +4078,7 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
                 logger.error(f"榆社县公示表模板不存在: {template_path}")
                 raise FileNotFoundError(f"榆社县公示表模板不存在: {template_path}")
 
-            filename_base = f"榆社县{zhen}{cun}"
+            filename_base = f"{fbfbm}榆社县{zhen}{cun}"
             if zumin:
                 filename_base += f"({zumin})"
             filename = _clean_filename(f"{filename_base}公示表（{version}）.xlsx")
@@ -4135,10 +4135,13 @@ def generate_yushe_gsb_table(family_info_path, land_info_path, output_directory)
                 current += 1
             data_end = current - 1
 
-            # 每户合并 A/B/C:D/K/P/R（C:D 成员数列无论块高多少都需合并，单行户也横跨 C:D）
+            # 每户合并 A/B/C:D/K/P/R；签字版额外纵向合并「签字确认」列(AD/30)。C:D 单行户也横跨。
+            hh_merges = [(1, 1), (2, 2), (3, 4), (12, 12), (17, 17), (19, 19)]
+            if version == '签字版':
+                hh_merges.append((30, 30))
             for sr, er in hh_spans:
                 if er > sr:
-                    for cols in [(1, 1), (2, 2), (3, 4), (12, 12), (17, 17), (19, 19)]:
+                    for cols in hh_merges:
                         ws.merge_cells(start_row=sr, start_column=cols[0], end_row=er, end_column=cols[1])
                 else:
                     ws.merge_cells(start_row=sr, start_column=3, end_row=sr, end_column=4)

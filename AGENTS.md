@@ -9,9 +9,9 @@ Windows-only Python 工具（Python 3.13），读取 MDB (Access) 数据库 + SH
 | 用途 | 命令 |
 |------|------|
 | 启动 GUI | `python GenerateGSB_GUI_Wrapper.py` |
-| CLI 调试 | `python GenerateGSB.py`（交互式 1-7 功能菜单） |
+| CLI 调试 | `python GenerateGSB.py`（交互式 1-8 功能菜单） |
 
-GUI 启动器 `GenerateGSB_GUI_Wrapper.py` 设置日志与全局异常处理器（弹 Windows MessageBox）后再导入 `GenerateGSB_GUI.py` 的 `MainWindow`。核心逻辑全在 `GenerateGSB.py`（~4700 行）。
+GUI 启动器 `GenerateGSB_GUI_Wrapper.py` 设置日志与全局异常处理器（弹 Windows MessageBox）后再导入 `GenerateGSB_GUI.py` 的 `MainWindow`。核心逻辑全在 `GenerateGSB.py`。
 
 ## 核心文件职责
 
@@ -28,7 +28,7 @@ GUI 启动器 `GenerateGSB_GUI_Wrapper.py` 设置日志与全局异常处理器�
 |--------|------|:--------:|------|
 | 南谯区 | 公示表 / 摸底调查表 / 承包地块调查表 / 户主代表声明书 / 一户一档封面 | 公示表、承包地块调查表需要 | MDB+SHP |
 | 金寨县 | 摸底调查表 / 公示表 / 土地承包经营权调查信息表 | 公示表需要 | MDB+SHP |
-| 榆社县 | 摸底调查表 / 公示表 | 否 | MDB+SHP |
+| 榆社县 | 摸底调查表 / 公示表 / 一户一档材料 | 否 | MDB+SHP |
 | 明光市 | 发包方调查表 / 一户一档清单 / 移交技术资料清单 / 特殊群体统计表 | 否 | 前三者仅 MDB；特殊群体统计表仅需摸底表目录 + 封面日期 |
 
 ## 数据流 (公示表为例)

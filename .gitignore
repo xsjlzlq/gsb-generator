@@ -13,3 +13,7 @@ logs/
 
 # 临时/测试输出
 *.log
+session-*.md
+测试数据/
+Templates/榆社资料模板/140721*
+

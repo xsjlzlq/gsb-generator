@@ -308,18 +308,125 @@ def xb_code_to_name(code):
     return code_name_map.get(str(code), "") if code else ""
 
 
+# -------------------------------------------------------------
+# 农村土地承包调查标准代码字典定义
+# -------------------------------------------------------------
+DKLB_MAP = {
+    "10": "承包地块",
+    "21": "自留地",
+    "22": "机动地",
+    "23": "开荒地",
+    "99": "其他集体土地"
+}
+
+DLDJ_MAP = {
+    "01": "一等地",
+    "02": "二等地",
+    "03": "三等地",
+    "04": "四等地",
+    "05": "五等地",
+    "06": "六等地",
+    "07": "七等地",
+    "08": "八等地",
+    "09": "九等地",
+    "10": "十等地"
+}
+
+JZDLX_MAP = {
+    "1": "实测法界址点",
+    "2": "航测法界址点",
+    "3": "图解法界址点"
+}
+
+JBLX_MAP = {
+    "1": "钢钉",
+    "2": "水泥桩",
+    "3": "石灰桩",
+    "4": "喷涂",
+    "5": "瓷标志",
+    "6": "无标志",
+    "7": "木桩",
+    "8": "埋石",
+    "9": "其他界标"
+}
+
+JZXLB_MAP = {
+    "01": "田埂",
+    "02": "沟渠",
+    "03": "道路",
+    "04": "行树",
+    "05": "围墙",
+    "06": "墙壁",
+    "07": "栅栏",
+    "08": "两点连线",
+    "09": "其他界线"
+}
+
+JZXWZ_MAP = {
+    "01": "内",
+    "02": "中",
+    "03": "外",
+    "1": "内",
+    "2": "中",
+    "3": "外"
+}
+
+ZJLX_MAP = {
+    "1": "居民身份证",
+    "2": "军官证",
+    "3": "行政、企事业单位机构代码证或法人代码证",
+    "4": "户口簿",
+    "5": "护照",
+    "9": "其他证件"
+}
+
+CBFLX_MAP = {
+    "1": "农户",
+    "2": "个人",
+    "3": "单位"
+}
+
+XB_MAP = {
+    "1": "男",
+    "2": "女"
+}
+
+SF_MAP = {
+    "1": "是",
+    "2": "否"
+}
+
+TDYT_MAP = {
+    "1": "种植业",
+    "2": "林业",
+    "3": "畜牧业",
+    "4": "渔业",
+    "5": "非农业用途"
+}
+
+
+SYQXZ_MAP = {
+    "10": "国有土地所有权",
+    "30": "集体土地所有权",
+    "31": "村民小组",
+    "32": "村级集体经济组织",
+    "33": "乡级集体经济组织",
+    "34": "其他农民集体经济组织",
+}
+
+
+def syqxz_code_to_name(code):
+    """
+    将 SYQXZ 代码转换为对应的所有权性质名称。
+    """
+    return SYQXZ_MAP.get(str(code), str(code)) if code else ""
+
+
 def dklb_code_to_name(code):
     """
     将 DKLB 代码转换为对应的地块类别名称。
     """
-    code_name_map = {
-        '10': "承包地块",
-        '21': "自留地",
-        '22': "机动地",
-        '23': "开荒地",
-        '99': "其他集体土地",
-    }
-    return code_name_map.get(str(code), str(code)) if code else ""
+    return DKLB_MAP.get(str(code), str(code)) if code else ""
 
 
 def tdlylx_code_to_name(code):
@@ -407,26 +514,83 @@ def dldj_code_to_name(code):
     """
     将 DLDJ 代码转换为对应的地力等级名称。
     """
-    code_name_map = {
-        '01': "一等地",
-        '02': "二等地",
-        '03': "三等地",
-        '04': "四等地",
-        '05': "五等地",
-        '06': "六等地",
-    }
-    return code_name_map.get(str(code), str(code)) if code else ""
+    return DLDJ_MAP.get(str(code), str(code)) if code else ""
 
 
 def sfjbnt_code_to_name(code):
     """
     将 SFJBNT 代码转换为对应的是否基本农田名称。
     """
-    code_name_map = {
-        '1': "是",
-        '2': "否",
-    }
-    return code_name_map.get(str(code), str(code)) if code else ""
+    return SF_MAP.get(str(code), str(code)) if code else ""
+
+
+def jzdlx_code_to_name(code):
+    """
+    将界址点类型代码转换为对应名称。
+    """
+    return JZDLX_MAP.get(str(code), str(code)) if code else ""
+
+
+def jblx_code_to_name(code):
+    """
+    将界标类型代码转换为对应名称。
+    """
+    return JBLX_MAP.get(str(code), str(code)) if code else ""
+
+
+def jzxlb_code_to_name(code):
+    """
+    将界址线类别代码转换为对应名称。
+    """
+    return JZXLB_MAP.get(str(code), str(code)) if code else ""
+
+
+def jzxwz_code_to_name(code):
+    """
+    将界址线位置代码转换为对应名称。
+    """
+    return JZXWZ_MAP.get(str(code), str(code)) if code else ""
+
+
+def zjlx_code_to_name(code):
+    """
+    将证件类型代码转换为对应名称。
+    """
+    return ZJLX_MAP.get(str(code), str(code)) if code else ""
+
+
+def cbflx_code_to_name(code):
+    """
+    将承包方类型代码转换为对应名称。
+    """
+    return CBFLX_MAP.get(str(code), str(code)) if code else ""
+
+
+def xb_code_to_name(code):
+    """
+    将性别代码转换为对应名称（支持 1/男、2/女）。
+    """
+    if not code:
+        return ""
+    code_str = str(code).strip()
+    return XB_MAP.get(code_str, code_str)
+
+
+def sf_code_to_name(code):
+    """
+    将是否代码转换为对应名称（1->是，2->否）。
+    """
+    return SF_MAP.get(str(code), str(code)) if code else ""
+
+
+def tdyt_code_to_name(code):
+    """
+    将土地用途代码转换为对应名称。
+    """
+    if not code:
+        return ""
+    code_str = str(code).strip()
+    return TDYT_MAP.get(code_str, code_str)
 
 
 def _load_code_table_file(path):
@@ -3804,6 +3968,47 @@ def _strip_admin_suffix(name):
     return s
 
 
+def parse_yushe_parts(fbfmc):
+    """
+    解析榆社县发包方名称，返回剥离行政后缀的 (乡镇名, 村名, 组名)。
+    例如：'榆社县社城镇官上村圪麻窊组集体经济组织' -> ('社城', '官上', '圪麻窊')
+          '榆社县社城镇官上村集体经济组织' -> ('社城', '官上', '')
+    """
+    zhen_raw, cun_raw, zu_raw = parse_yushe_fbfmc(fbfmc)
+    zhen = zhen_raw
+    for pfx in ('山西省晋中市榆社县', '晋中市榆社县', '榆社县'):
+        if zhen.startswith(pfx):
+            zhen = zhen[len(pfx):]
+            break
+    for sfx in ('街道', '乡', '镇'):
+        if zhen.endswith(sfx) and len(zhen) > len(sfx):
+            zhen = zhen[:-len(sfx)]
+            break
+    cun = cun_raw
+    for sfx in ('社区', '村'):
+        if cun.endswith(sfx) and len(cun) > len(sfx):
+            cun = cun[:-len(sfx)]
+            break
+    zu = zu_raw
+    for sfx in ('村民小组', '小组', '组', '队', '社'):
+        if zu.endswith(sfx) and len(zu) > len(sfx):
+            zu = zu[:-len(sfx)]
+            break
+    return zhen, cun, zu
+
+
+def parse_gender_from_id(id_str, fallback='男'):
+    """根据身份证号解析性别，18位第17位或15位第15位奇数男、偶数女，解析失败默认'男'"""
+    if not id_str:
+        return fallback
+    clean_id = str(id_str).strip()
+    if len(clean_id) == 18 and clean_id[:17].isdigit():
+        return '男' if int(clean_id[16]) % 2 != 0 else '女'
+    elif len(clean_id) == 15 and clean_id.isdigit():
+        return '男' if int(clean_id[14]) % 2 != 0 else '女'
+    return fallback
+
+
 def _clean_filename(name):
     """清理文件名中的非法字符"""
     import re
@@ -4333,7 +4538,8 @@ def replace_bookmark_in_doc(doc, bookmark_name, replacement_text):
         for index, child in enumerate(children):
             if child.tag != bm_start_tag:
                 continue
-            if child.get(qn("w:name")) != bookmark_name:
+            bm_name = child.get(qn("w:name"))
+            if not bm_name or (bm_name != bookmark_name and bm_name.upper() != bookmark_name.upper()):
                 continue
 
             bookmark_id = child.get(qn("w:id"))
@@ -4345,7 +4551,8 @@ def replace_bookmark_in_doc(doc, bookmark_name, replacement_text):
                     break
 
             if end_index is None:
-                return False
+                # 若段落内未找到 bookmarkEnd（例如 bookmarkEnd 位于 body 级），默认替换至段落末尾
+                end_index = len(children)
 
             template_run = None
             for candidate in children[index + 1:end_index]:
@@ -5252,6 +5459,1761 @@ def generate_tsqt_statistics(survey_dir, output_path, cover_date="    年  月  
     logger.info(f"共处理 {len(village_data)} 个村（文件），{sum(len(v['members']) for v in village_data)} 个特殊群体成员")
 
 
+def insert_rows_with_merges(ws, insert_pos, amount):
+    """
+    在指定位置插入新行，同时正确平移下方所有合并单元格（merged_cells）与行高设置（row_dimensions），
+    避免 openpyxl 默认 insert_rows 不平移合并区域导致的样式冲突与单元格错位。
+    """
+    from openpyxl.worksheet.cell_range import CellRange
+
+    # 1. 平移所有受影响的合并单元格
+    new_ranges = []
+    for rng in list(ws.merged_cells.ranges):
+        if rng.min_row >= insert_pos:
+            ws.merged_cells.remove(rng)
+            new_ranges.append(CellRange(
+                min_col=rng.min_col,
+                min_row=rng.min_row + amount,
+                max_col=rng.max_col,
+                max_row=rng.max_row + amount
+            ))
+        elif rng.max_row >= insert_pos:
+            ws.merged_cells.remove(rng)
+            new_ranges.append(CellRange(
+                min_col=rng.min_col,
+                min_row=rng.min_row,
+                max_col=rng.max_col,
+                max_row=rng.max_row + amount
+            ))
+
+    # 2. 平移所有受影响的行高
+    new_row_dimensions = {}
+    for r, dim in list(ws.row_dimensions.items()):
+        if r >= insert_pos:
+            del ws.row_dimensions[r]
+            new_row_dimensions[r + amount] = dim
+    for r, dim in new_row_dimensions.items():
+        ws.row_dimensions[r] = dim
+
+    # 3. 插入行（平移单元格数据）
+    ws.insert_rows(insert_pos, amount)
+
+    # 4. 重新挂载平移后的合并单元格
+    for rng in new_ranges:
+        ws.merged_cells.add(rng)
+
+
+def chain_parcel_boundary(sub_lines, dkbm):
+    """
+    通过拓扑首尾相连算法对地块界址线进行闭环排序，
+    并准确解析每个顶点的真实界址点号，彻底解决 Shapefile 矢量方向不一致、
+    反向界址线导致点号相邻重复、以及宗地共享界址线乱序的问题。
+    """
+    import re
+    lines = sub_lines.to_dict('records')
+    if len(lines) < 3:
+        return lines, [str(l.get('QJZDH', '')).strip() for l in lines]
+
+    # 若存在宗地内细分线等非主边界线，优先提取包含 'T数字' 标号的主边界界址线
+    t_lines = [l for l in lines if re.search(r'[由至到]T\d+|T\d+沿', str(l.get('JZXSM', '')))]
+    if len(t_lines) >= 3:
+        lines = t_lines
+    n = len(lines)
+
+    # 1. 寻找起始线（优先取 DKBM 完全匹配且包含 '由T1' 或 'T1沿' 的界址线）
+    start_candidates = []
+    for idx, l in enumerate(lines):
+        sm = str(l.get('JZXSM', ''))
+        if ('由T1' in sm or 'T1沿' in sm) and ('至T2' in sm or '到T2' in sm):
+            start_candidates.append((l.get('DKBM') == dkbm, idx))
+
+    if start_candidates:
+        start_candidates.sort(key=lambda x: x[0], reverse=True)
+        curr_line_idx = start_candidates[0][1]
+    else:
+        t1_cands = [i for i, l in enumerate(lines) if '由T1' in str(l.get('JZXSM', '')) or 'T1沿' in str(l.get('JZXSM', ''))]
+        curr_line_idx = t1_cands[0] if t1_cands else 0
+
+    curr_line = lines[curr_line_idx]
+
+    # 2. 确定该起始线在闭环中哪一端是 T1
+    t1_pt = None
+    for l in lines:
+        sm = str(l.get('JZXSM', ''))
+        if ('至T1' in sm or '到T1' in sm) and (l.get('DKBM') == dkbm or len(lines) <= 4):
+            inter = {str(curr_line['QJZDH']), str(curr_line['ZJZDH'])}.intersection({str(l['QJZDH']), str(l['ZJZDH'])})
+            if len(inter) == 1:
+                t1_pt = list(inter)[0]
+                break
+
+    if not t1_pt:
+        t1_pt = str(curr_line['QJZDH']).strip()
+
+    ordered_lines = [curr_line]
+    ordered_pts = [t1_pt]
+    used_line_indices = {curr_line_idx}
+
+    curr_pt = t1_pt
+    next_pt = (set([str(curr_line['QJZDH']).strip(), str(curr_line['ZJZDH']).strip()]) - {curr_pt}).pop()
+    ordered_pts.append(next_pt)
+    curr_pt = next_pt
+
+    # 3. 沿环路拓扑依次寻径
+    for _ in range(n - 1):
+        found = False
+        for idx, l in enumerate(lines):
+            if idx in used_line_indices:
+                continue
+            s = set([str(l['QJZDH']).strip(), str(l['ZJZDH']).strip()])
+            if curr_pt in s:
+                used_line_indices.add(idx)
+                ordered_lines.append(l)
+                next_pt = (s - {curr_pt}).pop()
+                if len(ordered_pts) < n:
+                    ordered_pts.append(next_pt)
+                curr_pt = next_pt
+                found = True
+                break
+        if not found:
+            return lines, [str(l.get('QJZDH', '')).strip() for l in lines]
+
+    return ordered_lines, ordered_pts
+
+
+def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_directory):
+    """
+    榆社县一户一档材料生成功能
+    从MDB中读取 FBF, CBF, CBF_JTCY, CBHT 等表
+    生成【发包方调查表】、【承包方调查表】、【承包经营权调查结果核实表】等一户一档材料
+    """
+    import copy
+    import re
+    os.makedirs(output_directory, exist_ok=True)
+    logger.info(f"开始生成榆社县一户一档材料，输出目录: {output_directory}")
+
+    template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Templates', '榆社资料模板')
+    cbf_tpl_path = os.path.join(template_dir, '承包方调查表模版.xlsx')
+    fbf_tpl_path = os.path.join(template_dir, '发包方调查表模版.xlsx')
+    hs_tpl_path = os.path.join(template_dir, '承包经营权调查结果核实表模版.xlsx')
+    gh_tpl_path = os.path.join(template_dir, '承包经营权公示结果归户表模版.xlsx')
+    sm_tpl_path = os.path.join(template_dir, '公示无异议声明书模版.docx')
+    hz_tpl_path = os.path.join(template_dir, '户主声明书模版.docx')
+    sq_tpl_path = os.path.join(template_dir, '家庭承包申请书模版.docx')
+    dk_tpl_path = os.path.join(template_dir, '承包地块调查表模版.xlsx')
+
+    if not os.path.exists(cbf_tpl_path):
+        logger.error(f"承包方调查表模版不存在: {cbf_tpl_path}")
+        raise FileNotFoundError(f"承包方调查表模版不存在: {cbf_tpl_path}")
+    if not os.path.exists(fbf_tpl_path):
+        logger.error(f"发包方调查表模版不存在: {fbf_tpl_path}")
+        raise FileNotFoundError(f"发包方调查表模版不存在: {fbf_tpl_path}")
+    if not os.path.exists(hs_tpl_path):
+        logger.error(f"承包经营权调查结果核实表模版不存在: {hs_tpl_path}")
+        raise FileNotFoundError(f"承包经营权调查结果核实表模版不存在: {hs_tpl_path}")
+    if not os.path.exists(gh_tpl_path):
+        logger.error(f"承包经营权公示结果归户表模版不存在: {gh_tpl_path}")
+        raise FileNotFoundError(f"承包经营权公示结果归户表模版不存在: {gh_tpl_path}")
+
+    # 加载发包方与承包方变更调查统计表
+    resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
+    fbf_stat_path = os.path.join(resources_dir, '榆社县发包方信息变更调查统计.xlsx')
+    cbf_stat_path = os.path.join(resources_dir, '榆社县承包方信息变更调查统计.xlsx')
+
+    fbf_stat_dict = {}
+    if os.path.exists(fbf_stat_path):
+        try:
+            logger.info(f"正在加载发包方变更调查统计: {fbf_stat_path}")
+            df_fbf_stat = pd.read_excel(fbf_stat_path)
+            for _, r in df_fbf_stat.iterrows():
+                code = str(r['修改后代码']).strip()
+                fbf_stat_dict[code] = r.to_dict()
+        except Exception as e:
+            logger.warning(f"读取发包方变更统计失败: {e}")
+    else:
+        logger.warning(f"发包方变更调查统计文件不存在: {fbf_stat_path}")
+
+    cbf_stat_dict = {}
+    if os.path.exists(cbf_stat_path):
+        try:
+            logger.info(f"正在加载承包方变更调查统计: {cbf_stat_path}")
+            df_cbf_stat = pd.read_excel(cbf_stat_path)
+            for _, r in df_cbf_stat.iterrows():
+                code = str(r['承包方编码']).strip()
+                cbf_stat_dict[code] = r.to_dict()
+        except Exception as e:
+            logger.warning(f"读取承包方变更统计失败: {e}")
+    else:
+        logger.warning(f"承包方变更调查统计文件不存在: {cbf_stat_path}")
+
+    # 加载一户一档材料时间表
+    time_table_path = os.path.join(resources_dir, '榆社县一户一档材料时间表.xlsx')
+    yushe_time_dict = {}
+    if os.path.exists(time_table_path):
+        try:
+            logger.info(f"正在加载一户一档材料时间表: {time_table_path}")
+            wb_time = openpyxl.load_workbook(time_table_path, data_only=True)
+            ws_time = wb_time.active
+            for r in range(3, ws_time.max_row + 1):
+                raw_code = ws_time.cell(r, 2).value
+                if not raw_code:
+                    continue
+                try:
+                    code_str = str(int(float(raw_code))).strip()
+                except (ValueError, TypeError):
+                    code_str = str(raw_code).strip()
+
+                def get_dt_from_cell(col_idx):
+                    val = ws_time.cell(r, col_idx).value
+                    if val is None or str(val).strip() in ('', '/', 'NaT', 'None'):
+                        return None
+                    if hasattr(val, 'strftime'):
+                        return val
+                    try:
+                        dt = pd.to_datetime(val)
+                        return dt if pd.notna(dt) else None
+                    except Exception:
+                        return None
+
+                yushe_time_dict[code_str] = {
+                    'fbf_dc_dt': get_dt_from_cell(5),
+                    'fbf_sh_dt': get_dt_from_cell(6),
+                    'hz_rq_dt': get_dt_from_cell(7),
+                    'cbf_db_dt': get_dt_from_cell(8),
+                    'cbf_dc_dt': get_dt_from_cell(9),
+                    'cbf_sh_dt': get_dt_from_cell(10),
+                    'dk_db_dt': get_dt_from_cell(11),
+                    'dk_dc_dt': get_dt_from_cell(12),
+                    'dk_sh_dt': get_dt_from_cell(13),
+                    'hs_dc_dt': get_dt_from_cell(14),
+                    'hs_db_dt': get_dt_from_cell(15),
+                    'hs_ry_dt': get_dt_from_cell(16),
+                    'hs_sh_dt': get_dt_from_cell(17),
+                    'sm_dt': get_dt_from_cell(18),
+                    'gh_gs_dt': get_dt_from_cell(19),
+                    'gh_db_dt': get_dt_from_cell(20),
+                    'gh_sh_dt': get_dt_from_cell(21),
+                    'sq_dt': get_dt_from_cell(22),
+                }
+        except Exception as e:
+            logger.warning(f"读取一户一档材料时间表失败: {e}")
+    else:
+        logger.info(f"一户一档材料时间表不存在: {time_table_path}，将不进行任何日期写入操作")
+
+    def format_date_str(dt):
+        if dt is None:
+            return ''
+        if hasattr(dt, 'strftime'):
+            return dt.strftime('%Y年%m月%d日')
+        if pd.notna(dt) and str(dt).strip() != '':
+            try:
+                return pd.to_datetime(dt).strftime('%Y年%m月%d日')
+            except Exception:
+                pass
+        return ''
+
+    def get_fbf_time_info(fbfbm_code):
+        if not fbfbm_code or not yushe_time_dict:
+            return None
+        code_s = str(fbfbm_code).strip()
+        return yushe_time_dict.get(code_s)
+
+    def format_stat_num(val):
+        if pd.isna(val) or str(val).strip() in ('/', '', 'nan', 'None'):
+            return '/'
+        try:
+            f = float(val)
+            if f.is_integer():
+                return str(int(f))
+            else:
+                return f"{f:.2f}".rstrip('0').rstrip('.')
+        except Exception:
+            return str(val).strip()
+
+    def clean_border_desc(text, direction_char):
+        if pd.isna(text) or text is None:
+            return ''
+        s = str(text).strip()
+        if not s or s in ('/', '无'):
+            return ''
+        for prefix in [f'{direction_char}：', f'{direction_char}:', f'{direction_char} :']:
+            if s.startswith(prefix):
+                s = s[len(prefix):].strip()
+                break
+        return s
+
+    conn_str = (
+        r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
+        r'DBQ=' + mdb_file_path + ';'
+    )
+    conn = pyodbc.connect(conn_str)
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            fbf_df = pd.read_sql_query('SELECT * FROM [FBF]', conn)
+            cbf_df = pd.read_sql_query('SELECT * FROM [CBF]', conn)
+            jtcy_df = pd.read_sql_query('SELECT * FROM [CBF_JTCY]', conn)
+            try:
+                cbht_df = pd.read_sql_query('SELECT * FROM [CBHT]', conn)
+            except Exception:
+                cbht_df = pd.DataFrame()
+            try:
+                cbdkxx_df = pd.read_sql_query('SELECT * FROM [CBDKXX]', conn)
+            except Exception:
+                cbdkxx_df = pd.DataFrame()
+
+        # 读取矢量数据属性（四至等信息）以及 JZD / JZX
+        merged_land_df = pd.DataFrame()
+        jzd_df = gpd.GeoDataFrame()
+        jzx_df = gpd.GeoDataFrame()
+        if shp_file_path and os.path.exists(shp_file_path):
+            try:
+                shp_files_with_dk = find_shp_files_with_dk(shp_file_path)
+                all_vector_data = gpd.GeoDataFrame()
+                for shp_file in shp_files_with_dk:
+                    vdata = read_shp_safe(shp_file)
+                    all_vector_data = pd.concat([all_vector_data, vdata], ignore_index=True)
+                if not cbdkxx_df.empty and not all_vector_data.empty:
+                    merged_land_df = pd.merge(cbdkxx_df, all_vector_data.drop(columns=['geometry'], errors='ignore'), on='DKBM', how='left')
+                elif not cbdkxx_df.empty:
+                    merged_land_df = cbdkxx_df.copy()
+            except Exception as e:
+                logger.warning(f"读取SHP矢量数据失败: {e}")
+                if not cbdkxx_df.empty:
+                    merged_land_df = cbdkxx_df.copy()
+
+            # 读取 JZD 与 JZX 矢量数据
+            try:
+                for root_dir, _, filenames in os.walk(shp_file_path):
+                    for fn in filenames:
+                        fn_upper = fn.upper()
+                        if fn_upper.endswith('.SHP'):
+                            if fn_upper.startswith('JZD') or 'JZD' in fn_upper:
+                                jzd_df = pd.concat([jzd_df, read_shp_safe(os.path.join(root_dir, fn))], ignore_index=True)
+                            elif fn_upper.startswith('JZX') or 'JZX' in fn_upper:
+                                jzx_df = pd.concat([jzx_df, read_shp_safe(os.path.join(root_dir, fn))], ignore_index=True)
+            except Exception as e:
+                logger.warning(f"读取JZD/JZX矢量数据失败: {e}")
+        elif not cbdkxx_df.empty:
+            merged_land_df = cbdkxx_df.copy()
+
+        # -----------------------------
+        # 1. 生成发包方调查表
+        # -----------------------------
+        logger.info(f"正在生成发包方调查表，共 {len(fbf_df)} 个发包方...")
+        for _, fbf_row in fbf_df.iterrows():
+            fbfbm = str(fbf_row['FBFBM']) if pd.notna(fbf_row['FBFBM']) else ''
+            fbfmc = str(fbf_row['FBFMC']) if pd.notna(fbf_row['FBFMC']) else ''
+            fbffzrxm = str(fbf_row['FBFFZRXM']) if pd.notna(fbf_row['FBFFZRXM']) else ''
+            fzrzjhm = str(fbf_row['FZRZJHM']) if pd.notna(fbf_row['FZRZJHM']) else ''
+            fbfdz = str(fbf_row['FBFDZ']) if pd.notna(fbf_row['FBFDZ']) else ''
+            yzbm = str(fbf_row['YZBM']) if pd.notna(fbf_row['YZBM']) else ''
+            lxdh = str(fbf_row['LXDH']) if pd.notna(fbf_row['LXDH']) else ''
+
+            # 判断负责人性别：根据身份证号倒数第2位（第17位），奇数男，偶数女
+            is_male = True
+            clean_id = fzrzjhm.strip()
+            if len(clean_id) == 18 and clean_id[:17].isdigit():
+                gender_digit = int(clean_id[16])
+                is_male = (gender_digit % 2 != 0)
+            elif len(clean_id) == 15 and clean_id.isdigit():
+                gender_digit = int(clean_id[14])
+                is_male = (gender_digit % 2 != 0)
+
+            sex_text = 'R男  £女' if is_male else '£男  R女'
+
+            # 打开模版并填充数据
+            wb_fbf = openpyxl.load_workbook(fbf_tpl_path)
+            ws_fbf = wb_fbf.active
+
+            ws_fbf['D4'].value = fbfmc
+            ws_fbf['G4'].value = fbfbm
+            ws_fbf['D5'].value = fbffzrxm
+            ws_fbf['G5'].value = sex_text
+            ws_fbf['G5'].font = openpyxl.styles.Font(name='Wingdings 2', size=11)
+            ws_fbf['D6'].value = fbfdz
+            ws_fbf['D7'].value = yzbm
+            ws_fbf['G7'].value = lxdh
+            ws_fbf['D9'].value = fzrzjhm
+
+            # 填充发包方调查记事
+            fbf_stat = fbf_stat_dict.get(fbfbm)
+            if fbf_stat:
+                y_fbfmc = str(fbf_stat.get('原发包方名称', '')).strip() if pd.notna(fbf_stat.get('原发包方名称')) else fbfmc
+                x_fbfmc = str(fbf_stat.get('现发包方名称', '')).strip() if pd.notna(fbf_stat.get('现发包方名称')) else fbfmc
+                y_fzr = str(fbf_stat.get('原发包方负责人', '')).strip() if pd.notna(fbf_stat.get('原发包方负责人')) else fbffzrxm
+                x_fzr = str(fbf_stat.get('现发包方负责人', '')).strip() if pd.notna(fbf_stat.get('现发包方负责人')) else fbffzrxm
+
+                y_cbf_gs = fbf_stat.get('原承包方个数', 0)
+                x_cbf_gs = fbf_stat.get('现延包方个数', 0)
+                try:
+                    diff_num = int(x_cbf_gs) - int(y_cbf_gs)
+                    if diff_num >= 0:
+                        diff_text = f"分户新增{diff_num}个"
+                    else:
+                        diff_text = f"减少{-diff_num}个"
+                except Exception:
+                    diff_text = "分户新增0个"
+
+                yb_td = fbf_stat.get('延包承包土地（亩）', 0)
+                fyb_td = fbf_stat.get('非承包土地（亩）', 0)
+                try:
+                    total_land = float(yb_td) + float(fyb_td)
+                    total_land_str = format_stat_num(total_land)
+                except Exception:
+                    total_land_str = format_stat_num(yb_td)
+
+                yb_td_str = format_stat_num(yb_td)
+                fyb_td_str = format_stat_num(fyb_td)
+                y_cbf_str = format_stat_num(y_cbf_gs)
+                x_cbf_str = format_stat_num(x_cbf_gs)
+
+                fbfdcjs = (
+                    f"1、原发包方名称:{y_fbfmc}，现发包方名称:{x_fbfmc}；\n"
+                    f"2、原发包方负责人:{y_fzr}，现发包方负责人:{x_fzr}；\n"
+                    f"3、原承包方{y_cbf_str}个，现延包方{x_cbf_str}个;{diff_text}；\n"
+                    f"4、本次延包耕地共{total_land_str}亩，其中延包承包土地共{yb_td_str}亩，非承包土地{fyb_td_str}亩。"
+                )
+                ws_fbf['B10'].value = fbfdcjs
+
+            # 填写发包方调查表时间（G11->调查记事时间XXXX年XX月XX日，G13->审核意见时间XXXX年XX月XX日）
+            time_info_fbf = get_fbf_time_info(fbfbm)
+            if time_info_fbf:
+                dt_fbf_dc = format_date_str(time_info_fbf.get('fbf_dc_dt'))
+                dt_fbf_sh = format_date_str(time_info_fbf.get('fbf_sh_dt'))
+                if dt_fbf_dc:
+                    ws_fbf['G11'].value = dt_fbf_dc
+                if dt_fbf_sh:
+                    ws_fbf['G13'].value = dt_fbf_sh
+
+            # 导出文件名：{FBFBM}_{FBFFZRXM}_发包方调查表.xlsx
+            fbf_filename = f"{fbfbm}_{fbffzrxm}_发包方调查表.xlsx"
+            fbf_dir = os.path.join(output_directory, fbfbm) if fbfbm else output_directory
+            os.makedirs(fbf_dir, exist_ok=True)
+            fbf_output_path = os.path.join(fbf_dir, fbf_filename)
+            wb_fbf.save(fbf_output_path)
+            logger.debug(f"已生成发包方调查表: {fbf_filename}")
+
+        # -----------------------------
+        # 2. 生成承包方调查表
+        # -----------------------------
+        logger.info(f"正在生成承包方调查表，共 {len(cbf_df)} 户承包方...")
+
+        # 整理合同期限与编号映射
+        cbht_map = {}
+        if not cbht_df.empty:
+            for _, ht_row in cbht_df.iterrows():
+                cbfbm_val = str(ht_row['CBFBM']) if pd.notna(ht_row['CBFBM']) else ''
+                if not cbfbm_val:
+                    continue
+                cbqxq = ht_row.get('CBQXQ')
+                cbqxz = ht_row.get('CBQXZ')
+                cbqxq_str = pd.to_datetime(cbqxq).strftime('%Y年%m月%d日') if pd.notna(cbqxq) else ''
+                cbqxz_str = pd.to_datetime(cbqxz).strftime('%Y年%m月%d日') if pd.notna(cbqxz) else ''
+                q_dt = pd.to_datetime(cbqxq) if pd.notna(cbqxq) else None
+                z_dt = pd.to_datetime(cbqxz) if pd.notna(cbqxz) else None
+                cbht_map[cbfbm_val] = {
+                    'CBQXQ': cbqxq_str,
+                    'CBQXZ': cbqxz_str,
+                    'Q_Y': str(q_dt.year) if q_dt else '2024',
+                    'Q_M': f"{q_dt.month:02d}" if q_dt else '01',
+                    'Q_D': f"{q_dt.day:02d}" if q_dt else '01',
+                    'Z_Y': str(z_dt.year) if z_dt else '2053',
+                    'Z_M': f"{z_dt.month:02d}" if z_dt else '12',
+                    'Z_D': f"{z_dt.day:02d}" if z_dt else '31',
+                }
+
+        # 循环每户承包方
+        for _, cbf_row in cbf_df.iterrows():
+            cbfbm = str(cbf_row['CBFBM']) if pd.notna(cbf_row['CBFBM']) else ''
+            cbfmc = str(cbf_row['CBFMC']) if pd.notna(cbf_row['CBFMC']) else ''
+            cbfdz = str(cbf_row['CBFDZ']) if pd.notna(cbf_row['CBFDZ']) else ''
+            yzbm = str(cbf_row['YZBM']) if pd.notna(cbf_row['YZBM']) else ''
+            lxdh = str(cbf_row['LXDH']) if pd.notna(cbf_row['LXDH']) else ''
+            cbfzjhm = str(cbf_row['CBFZJHM']) if pd.notna(cbf_row['CBFZJHM']) and str(cbf_row['CBFZJHM']).strip() != '' else '/'
+
+            # 发包方编码：CBFBM 前 14 位
+            fbfbm = cbfbm[:14] if len(cbfbm) >= 14 else ''
+            # 承包方编码后4位
+            cbfbm_last4 = cbfbm[-4:] if len(cbfbm) >= 4 else cbfbm
+            # 承包合同编号：CBFBM + "J"
+            cbhtbh = f"{cbfbm}J" if cbfbm else ''
+
+            # 承包期限
+            ht_info = cbht_map.get(cbfbm, {})
+            cbqxq_str = ht_info.get('CBQXQ', '2024年01月01日')
+            cbqxz_str = ht_info.get('CBQXZ', '2053年12月31日')
+            cbqx_text = f"{cbqxq_str} 至 {cbqxz_str}"
+
+            # 本户家庭成员
+            members = jtcy_df[jtcy_df['CBFBM'] == cbfbm].copy()
+            cbfcysl = len(members)
+
+            # 打开承包方调查表模版
+            wb_cbf = openpyxl.load_workbook(cbf_tpl_path)
+            ws_cbf = wb_cbf.active
+
+            # 填充基本信息单元格
+            ws_cbf['D3'].value = fbfbm
+            ws_cbf['K3'].value = cbfbm_last4
+            ws_cbf['D4'].value = cbfmc
+            ws_cbf['K4'].value = lxdh
+            ws_cbf['D5'].value = cbfdz
+            ws_cbf['M5'].value = yzbm
+            ws_cbf['M7'].value = cbfzjhm
+            ws_cbf['H9'].value = cbhtbh
+            ws_cbf['H11'].value = cbhtbh
+            ws_cbf['D13'].value = cbqx_text
+            ws_cbf['Q14'].value = str(cbfcysl)
+
+            # 处理成员列表行插入：
+            # 模版初始预留了12行（17行~28行）
+            # 如果成员个数 22 > cbfcysl > 12，则在17行位置插入10行
+            # 如果成员个数 cbfcysl > 22，则在第17行位置插入 cbfcysl - 12 行
+            num_insert = 0
+            if 12 < cbfcysl < 22:
+                num_insert = 10
+            elif cbfcysl >= 22:
+                num_insert = cbfcysl - 12
+
+            if num_insert > 0:
+                insert_rows_with_merges(ws_cbf, 17, num_insert)
+                ref_row = 17 + num_insert
+                for r in range(17, 17 + num_insert):
+                    ws_cbf.row_dimensions[r].height = ws_cbf.row_dimensions[ref_row].height
+                    for c in range(1, 19):
+                        src_cell = ws_cbf.cell(ref_row, c)
+                        tgt_cell = ws_cbf.cell(r, c)
+                        if src_cell.has_style:
+                            tgt_cell.font = copy.copy(src_cell.font)
+                            tgt_cell.border = copy.copy(src_cell.border)
+                            tgt_cell.fill = copy.copy(src_cell.fill)
+                            tgt_cell.number_format = src_cell.number_format
+                            tgt_cell.protection = copy.copy(src_cell.protection)
+                            tgt_cell.alignment = copy.copy(src_cell.alignment)
+                    # 恢复该行合并单元格
+                    ws_cbf.merge_cells(start_row=r, start_column=3, end_row=r, end_column=5)
+                    ws_cbf.merge_cells(start_row=r, start_column=7, end_row=r, end_column=8)
+                    ws_cbf.merge_cells(start_row=r, start_column=10, end_row=r, end_column=14)
+                    ws_cbf.merge_cells(start_row=r, start_column=15, end_row=r, end_column=18)
+
+            # 填充家庭成员数据
+            # 成员排序：优先本人/户主排在第1位，其他成员按原有顺序
+            def member_sort_key(m_row):
+                y = str(m_row.get('YHZGX', '')).strip()
+                return 0 if y in ('01', '02', '本人', '户主') else 1
+
+            sorted_members = sorted(members.to_dict('records'), key=member_sort_key)
+
+            for idx, m in enumerate(sorted_members):
+                curr_row = 17 + idx
+                cyxm = str(m.get('CYXM', '')) if pd.notna(m.get('CYXM')) else ''
+                cyxb = xb_code_to_name(m.get('CYXB', ''))
+
+                cyzjhm = str(m.get('CYZJHM', '')).strip() if pd.notna(m.get('CYZJHM')) else ''
+
+                # 从CYZJHM解析出生日期
+                csrq = ''
+                if len(cyzjhm) == 18 and cyzjhm[:14].isdigit():
+                    birth_year = cyzjhm[6:10]
+                    birth_month = cyzjhm[10:12]
+                    birth_day = cyzjhm[12:14]
+                    csrq = f"{birth_year}年{birth_month}月{birth_day}日"
+                elif len(cyzjhm) == 15 and cyzjhm[:12].isdigit():
+                    birth_year = "19" + cyzjhm[6:8]
+                    birth_month = cyzjhm[8:10]
+                    birth_day = cyzjhm[10:12]
+                    csrq = f"{birth_year}年{birth_month}月{birth_day}日"
+
+                # 与户主关系
+                yhzgx_raw = str(m.get('YHZGX', '')).strip() if pd.notna(m.get('YHZGX')) else ''
+                yhzgx = yhzgx_code_to_name(yhzgx_raw) if yhzgx_raw.isdigit() else yhzgx_raw
+
+                is_head = yhzgx in ('本人', '户主') or idx == 0
+
+                # 联系电话：只填写户主或本人，其他为 "/"
+                m_lxdh = lxdh if is_head else '/'
+
+                # 证件名称：户主或本人为“居民身份证”，其他成员为“户口簿”
+                zjmc = '居民身份证' if is_head else '户口簿'
+
+                # 写入单元格
+                ws_cbf.cell(curr_row, 1).value = cyxm
+                ws_cbf.cell(curr_row, 2).value = cyxb
+                ws_cbf.cell(curr_row, 3).value = csrq
+                ws_cbf.cell(curr_row, 6).value = yhzgx
+                ws_cbf.cell(curr_row, 7).value = m_lxdh
+                ws_cbf.cell(curr_row, 9).value = zjmc
+                ws_cbf.cell(curr_row, 10).value = cyzjhm
+
+            # 填充承包方调查记事
+            cbf_stat = cbf_stat_dict.get(cbfbm)
+            if cbf_stat:
+                y_cbf = str(cbf_stat.get('原承包方', '')).strip() if pd.notna(cbf_stat.get('原承包方')) else ''
+                x_cbf = str(cbf_stat.get('现二轮延包承包方', '')).strip() if pd.notna(cbf_stat.get('现二轮延包承包方')) else cbfmc
+
+                is_new_cbf = (not y_cbf) or (y_cbf in ('/', '无', '新增', 'nan', 'None'))
+
+                y_mj_str = format_stat_num(cbf_stat.get('原承包土地面积（亩）'))
+                y_ks_str = format_stat_num(cbf_stat.get('原承包土地地块数'))
+                x_mj_str = format_stat_num(cbf_stat.get('延包土地面积（亩）'))
+                x_ks_str = format_stat_num(cbf_stat.get('延包土地地块数'))
+
+                if is_new_cbf:
+                    cbfdcjs = (
+                        f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{x_cbf}。"
+                        f"2、延包土地{x_mj_str}亩，{x_ks_str}块。"
+                    )
+                else:
+                    cbfdcjs = (
+                        f"1、原承包方为{y_cbf}，现二轮延包承包方为{x_cbf}。"
+                        f"2、原承包土地{y_mj_str}亩，{y_ks_str}块；延包土地{x_mj_str}亩，{x_ks_str}块。"
+                    )
+            else:
+                cbfdcjs = f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{cbfmc}。"
+
+            # 写入调查记事单元格：Row 29 + num_insert, Col 10 (J)
+            ws_cbf.cell(29 + num_insert, 10).value = cbfdcjs
+
+            # 承包方（代表）时间->承包方（代表）栏F列；调查记事时间->调查记事栏的P列；审核意见时间->审核意见栏的M列
+            time_info = get_fbf_time_info(fbfbm)
+            if time_info:
+                dt_cbf_db = format_date_str(time_info.get('cbf_db_dt'))
+                dt_cbf_dc = format_date_str(time_info.get('cbf_dc_dt'))
+                dt_cbf_sh = format_date_str(time_info.get('cbf_sh_dt'))
+                if dt_cbf_db:
+                    ws_cbf.cell(29 + num_insert, 6).value = dt_cbf_db
+                if dt_cbf_dc:
+                    ws_cbf.cell(32 + num_insert, 16).value = dt_cbf_dc
+                if dt_cbf_sh:
+                    ws_cbf.cell(38 + num_insert, 13).value = dt_cbf_sh
+
+            # 导出文件名：{CBFBM}_{CBFMC}_承包方调查表.xlsx
+            cbf_filename = f"{cbfbm}_{cbfmc}_承包方调查表.xlsx"
+            fbf_dir = os.path.join(output_directory, fbfbm) if fbfbm else output_directory
+            safe_cbfmc = cbfmc.replace('/', '').replace('\\', '').replace(':', '').replace('*', '').replace('?', '').replace('\"', '').replace('<', '').replace('>', '').replace('|', '').strip()
+            cbf_dir = os.path.join(fbf_dir, f"{cbfbm}_{safe_cbfmc}")
+            os.makedirs(cbf_dir, exist_ok=True)
+            cbf_output_path = os.path.join(cbf_dir, cbf_filename)
+            wb_cbf.save(cbf_output_path)
+
+        # -----------------------------
+        # 3. 生成承包经营权调查结果核实表
+        # -----------------------------
+        logger.info(f"正在生成承包经营权调查结果核实表，共 {len(cbf_df)} 户承包方...")
+        fbf_map = {}
+        for _, f_row in fbf_df.iterrows():
+            f_bm = str(f_row.get('FBFBM', '')).strip()
+            fbf_map[f_bm] = {
+                'FBFMC': str(f_row.get('FBFMC', '')) if pd.notna(f_row.get('FBFMC')) else '',
+                'FBFFZRXM': str(f_row.get('FBFFZRXM', '')) if pd.notna(f_row.get('FBFFZRXM')) else '',
+            }
+
+        for _, cbf_row in cbf_df.iterrows():
+            cbfbm = str(cbf_row['CBFBM']) if pd.notna(cbf_row['CBFBM']) else ''
+            cbfmc = str(cbf_row['CBFMC']) if pd.notna(cbf_row['CBFMC']) else ''
+            cbfdz = str(cbf_row['CBFDZ']) if pd.notna(cbf_row['CBFDZ']) else ''
+            yzbm = str(cbf_row['YZBM']) if pd.notna(cbf_row['YZBM']) else ''
+            lxdh = str(cbf_row['LXDH']) if pd.notna(cbf_row['LXDH']) else ''
+            cbfzjhm = str(cbf_row['CBFZJHM']) if pd.notna(cbf_row['CBFZJHM']) and str(cbf_row['CBFZJHM']).strip() != '' else '/'
+
+            # 发包方信息
+            fbfbm = cbfbm[:14] if len(cbfbm) >= 14 else ''
+            fbf_info = fbf_map.get(fbfbm, {})
+            fbfmc = fbf_info.get('FBFMC', '')
+            fbffzrxm = fbf_info.get('FBFFZRXM', '')
+            time_info = get_fbf_time_info(fbfbm)
+
+            # 合同编号与期限
+            cbhtbh = f"{cbfbm}J" if cbfbm else ''
+            ht_info = cbht_map.get(cbfbm, {})
+            cbqxq_str = ht_info.get('CBQXQ', '2024年01月01日')
+            cbqxz_str = ht_info.get('CBQXZ', '2053年12月31日')
+            cbqx_text = f"{cbqxq_str} 至 {cbqxz_str}"
+
+            # 成员信息
+            members = jtcy_df[jtcy_df['CBFBM'] == cbfbm].copy()
+            cbfcysl = len(members)
+
+            # 打开核实表模版
+            wb_hs = openpyxl.load_workbook(hs_tpl_path)
+            ws_hs = wb_hs.active
+
+            # 填充基本信息单元格
+            ws_hs['E3'].value = fbfmc
+            ws_hs['N3'].value = fbffzrxm
+            ws_hs['E5'].value = cbhtbh
+            ws_hs['E7'].value = cbqx_text
+            ws_hs['E9'].value = cbfmc
+            ws_hs['N9'].value = lxdh
+            ws_hs['N10'].value = cbfzjhm
+            ws_hs['E13'].value = cbfdz
+            ws_hs['Q13'].value = yzbm
+            ws_hs['O15'].value = f"共 {cbfcysl} 人"
+
+            # 家庭成员信息：startrow=18;如果[cbfcysl]>25，则在43行粘贴标题行，之后在45行插入40行
+            if cbfcysl > 25:
+                insert_rows_with_merges(ws_hs, 43, 2)
+                for r_offset in [0, 1]:
+                    src_r = 16 + r_offset
+                    tgt_r = 43 + r_offset
+                    ws_hs.row_dimensions[tgt_r].height = ws_hs.row_dimensions[src_r].height
+                    for c in range(1, 18):
+                        src_cell = ws_hs.cell(src_r, c)
+                        tgt_cell = ws_hs.cell(tgt_r, c)
+                        tgt_cell.value = src_cell.value
+                        if src_cell.has_style:
+                            tgt_cell.font = copy.copy(src_cell.font)
+                            tgt_cell.border = copy.copy(src_cell.border)
+                            tgt_cell.fill = copy.copy(src_cell.fill)
+                            tgt_cell.number_format = src_cell.number_format
+                            tgt_cell.protection = copy.copy(src_cell.protection)
+                            tgt_cell.alignment = copy.copy(src_cell.alignment)
+
+                ws_hs.merge_cells('A43:A44')
+                ws_hs.merge_cells('B43:B44')
+                ws_hs.merge_cells('C43:D44')
+                ws_hs.merge_cells('E43:F44')
+                ws_hs.merge_cells('G43:I44')
+                ws_hs.merge_cells('J43:K44')
+                ws_hs.merge_cells('L43:O44')
+                ws_hs.merge_cells('P43:Q44')
+
+                insert_rows_with_merges(ws_hs, 45, 40)
+                for r in range(45, 85):
+                    ws_hs.row_dimensions[r].height = ws_hs.row_dimensions[18].height
+                    for c in range(1, 18):
+                        src_cell = ws_hs.cell(18, c)
+                        tgt_cell = ws_hs.cell(r, c)
+                        if src_cell.has_style:
+                            tgt_cell.font = copy.copy(src_cell.font)
+                            tgt_cell.border = copy.copy(src_cell.border)
+                            tgt_cell.fill = copy.copy(src_cell.fill)
+                            tgt_cell.number_format = src_cell.number_format
+                            tgt_cell.protection = copy.copy(src_cell.protection)
+                            tgt_cell.alignment = copy.copy(src_cell.alignment)
+                    ws_hs.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
+                    ws_hs.merge_cells(start_row=r, start_column=5, end_row=r, end_column=6)
+                    ws_hs.merge_cells(start_row=r, start_column=7, end_row=r, end_column=9)
+                    ws_hs.merge_cells(start_row=r, start_column=10, end_row=r, end_column=11)
+                    ws_hs.merge_cells(start_row=r, start_column=12, end_row=r, end_column=15)
+                    ws_hs.merge_cells(start_row=r, start_column=16, end_row=r, end_column=17)
+                cy_endrow = 84
+            else:
+                cy_endrow = 42
+
+            # 填充成员数据
+            def member_sort_key_hs(m_row):
+                y = str(m_row.get('YHZGX', '')).strip()
+                return 0 if y in ('01', '02', '本人', '户主') else 1
+
+            sorted_members_hs = sorted(members.to_dict('records'), key=member_sort_key_hs)
+
+            for idx, m in enumerate(sorted_members_hs):
+                if idx < 25:
+                    curr_row = 18 + idx
+                elif idx < 65:
+                    curr_row = 45 + (idx - 25)
+                else:
+                    break
+
+                cyxm = str(m.get('CYXM', '')) if pd.notna(m.get('CYXM')) else ''
+                cyxb = xb_code_to_name(m.get('CYXB', ''))
+                cyzjhm = str(m.get('CYZJHM', '')).strip() if pd.notna(m.get('CYZJHM')) else ''
+
+                csrq = ''
+                if len(cyzjhm) == 18 and cyzjhm[:14].isdigit():
+                    birth_year = cyzjhm[6:10]
+                    birth_month = cyzjhm[10:12]
+                    birth_day = cyzjhm[12:14]
+                    csrq = f"{birth_year}年{birth_month}月{birth_day}日"
+                elif len(cyzjhm) == 15 and cyzjhm[:12].isdigit():
+                    birth_year = "19" + cyzjhm[6:8]
+                    birth_month = cyzjhm[8:10]
+                    birth_day = cyzjhm[10:12]
+                    csrq = f"{birth_year}年{birth_month}月{birth_day}日"
+
+                yhzgx_raw = str(m.get('YHZGX', '')).strip() if pd.notna(m.get('YHZGX')) else ''
+                yhzgx = yhzgx_code_to_name(yhzgx_raw) if yhzgx_raw.isdigit() else yhzgx_raw
+
+                is_head = yhzgx in ('本人', '户主')
+                m_lxdh = lxdh if is_head else '/'
+                zjmc = '居民身份证' if is_head else '户口簿'
+
+                ws_hs.cell(curr_row, 1).value = cyxm
+                ws_hs.cell(curr_row, 2).value = cyxb
+                ws_hs.cell(curr_row, 3).value = csrq
+                ws_hs.cell(curr_row, 5).value = yhzgx
+                ws_hs.cell(curr_row, 7).value = m_lxdh
+                ws_hs.cell(curr_row, 10).value = zjmc
+                ws_hs.cell(curr_row, 12).value = cyzjhm
+                ws_hs.cell(curr_row, 16).value = '/'
+
+            # 承包地块情况
+            page1_start = cy_endrow + 1
+            page_len = 42
+
+            rel_merges = []
+            for mr in ws_hs.merged_cells.ranges:
+                if page1_start <= mr.min_row <= page1_start + page_len - 1 and page1_start <= mr.max_row <= page1_start + page_len - 1:
+                    rel_merges.append((mr.min_col, mr.min_row - page1_start, mr.max_col, mr.max_row - page1_start))
+
+            cbf_lands = merged_land_df[merged_land_df['CBFBM'] == cbfbm].sort_values('DKBM') if not merged_land_df.empty else pd.DataFrame()
+            num_parcels = len(cbf_lands)
+            extra_pages = (num_parcels - 1) // 9 if num_parcels > 0 else 0
+
+            # 如果[CBDKZS]>9，增加整页“承包地块情况”行
+            for ep in range(extra_pages):
+                insert_pos = page1_start + page_len * (ep + 1)
+                insert_rows_with_merges(ws_hs, insert_pos, page_len)
+                for i in range(page_len):
+                    src_r = page1_start + i
+                    tgt_r = insert_pos + i
+                    ws_hs.row_dimensions[tgt_r].height = ws_hs.row_dimensions[src_r].height
+                    for c in range(1, 18):
+                        src_cell = ws_hs.cell(src_r, c)
+                        tgt_cell = ws_hs.cell(tgt_r, c)
+                        if src_cell.has_style:
+                            tgt_cell.font = copy.copy(src_cell.font)
+                            tgt_cell.border = copy.copy(src_cell.border)
+                            tgt_cell.fill = copy.copy(src_cell.fill)
+                            tgt_cell.number_format = src_cell.number_format
+                            tgt_cell.protection = copy.copy(src_cell.protection)
+                            tgt_cell.alignment = copy.copy(src_cell.alignment)
+                        if i in [0, 1, 2, 3, 4] or src_cell.value in ['东 :', '南 :', '西 :', '北 :']:
+                            tgt_cell.value = src_cell.value
+                for min_col, min_r, max_col, max_r in rel_merges:
+                    ws_hs.merge_cells(start_row=insert_pos + min_r, start_column=min_col, end_row=insert_pos + max_r, end_column=max_col)
+
+            # 地块汇总：B{cy_endrow+2}：地块数量；G{cy_endrow+2}：合同总面积亩；N{cy_endrow+2}：实测总面积亩
+            ht_rows = cbht_df[cbht_df['CBFBM'] == cbfbm]
+            if not ht_rows.empty:
+                cbdkzs = ht_rows.iloc[0].get('CBDKZS', num_parcels)
+                htzmjm = ht_rows.iloc[0].get('HTZMJM', 0.0)
+            else:
+                cbdkzs = num_parcels
+                htzmjm = cbf_lands['HTMJM'].sum() if not cbf_lands.empty and 'HTMJM' in cbf_lands.columns else 0.0
+
+            total_pages = 1 + extra_pages
+            for p in range(total_pages):
+                p_sum_row = page1_start + p * 42 + 1
+                ws_hs.cell(p_sum_row, 2).value = str(cbdkzs)
+                ws_hs.cell(p_sum_row, 7).value = f"{float(htzmjm):.2f}亩"
+                ws_hs.cell(p_sum_row, 14).value = f"{float(htzmjm):.2f}亩"
+
+            # 填充地块槽位：每4行一个地块
+            for idx, land in enumerate(cbf_lands.to_dict('records')):
+                page_num = idx // 9
+                slot_in_page = idx % 9
+                r0 = page1_start + page_num * 42 + 5 + slot_in_page * 4
+
+                dkbm_val = str(land.get('DKBM', '')).strip()
+                dkbm_last5 = dkbm_val[-5:] if len(dkbm_val) >= 5 else dkbm_val
+                dkmc = str(land.get('DKMC', '')).strip() if pd.notna(land.get('DKMC')) else ''
+
+                clean_east = clean_border_desc(land.get('DKDZ'), '东')
+                clean_south = clean_border_desc(land.get('DKNZ'), '南')
+                clean_west = clean_border_desc(land.get('DKXZ'), '西')
+                clean_north = clean_border_desc(land.get('DKBZ'), '北')
+
+                htmjm_val = land.get('HTMJM')
+                htmjm_str = f"{float(htmjm_val):.2f}" if pd.notna(htmjm_val) and str(htmjm_val).strip() != '' else ''
+
+                scmjm_val = land.get('SCMJM')
+                scmjm_str = f"{float(scmjm_val):.2f}" if pd.notna(scmjm_val) and str(scmjm_val).strip() != '' else htmjm_str
+
+                tdyt_str = tdyt_code_to_name(land.get('TDYT', ''))
+
+                dklb_str = dklb_code_to_name(land.get('DKLB', ''))
+                tdlylx_str = tdlylx_code_to_name(land.get('TDLYLX', ''))
+                dldj_str = dldj_code_to_name(land.get('DLDJ', ''))
+                sfjbnt_str = sfjbnt_code_to_name(land.get('SFJBNT', ''))
+
+                ws_hs.cell(r0, 1).value = dkbm_last5
+                ws_hs.cell(r0, 2).value = dkmc
+                ws_hs.cell(r0, 4).value = f"东：{clean_east}" if clean_east else "东 :"
+                ws_hs.cell(r0 + 1, 4).value = f"南：{clean_south}" if clean_south else "南 :"
+                ws_hs.cell(r0 + 2, 4).value = f"西：{clean_west}" if clean_west else "西 :"
+                ws_hs.cell(r0 + 3, 4).value = f"北：{clean_north}" if clean_north else "北 :"
+                ws_hs.cell(r0, 9).value = htmjm_str
+                ws_hs.cell(r0, 10).value = scmjm_str
+                ws_hs.cell(r0, 11).value = tdyt_str
+                ws_hs.cell(r0, 12).value = dklb_str
+                ws_hs.cell(r0, 13).value = tdlylx_str
+                ws_hs.cell(r0, 14).value = dldj_str
+                ws_hs.cell(r0, 15).value = sfjbnt_str
+                ws_hs.cell(r0, 17).value = '家庭承包'
+
+            # 填充“非承包地块情况”页的调查记事
+            jishi_row = None
+            for r in range(page1_start + total_pages * 42, ws_hs.max_row + 1):
+                if ws_hs.cell(r, 1).value == '调查\n记事':
+                    jishi_row = r
+                    break
+
+            if jishi_row is not None:
+                cbf_stat = cbf_stat_dict.get(cbfbm)
+                if cbf_stat:
+                    y_cbf = str(cbf_stat.get('原承包方', '')).strip() if pd.notna(cbf_stat.get('原承包方')) else ''
+                    x_cbf = str(cbf_stat.get('现二轮延包承包方', '')).strip() if pd.notna(cbf_stat.get('现二轮延包承包方')) else cbfmc
+                    is_new_cbf = (not y_cbf) or (y_cbf in ('/', '无', '新增', 'nan', 'None'))
+                    y_mj_str = format_stat_num(cbf_stat.get('原承包土地面积（亩）'))
+                    y_ks_str = format_stat_num(cbf_stat.get('原承包土地地块数'))
+                    x_mj_str = format_stat_num(cbf_stat.get('延包土地面积（亩）'))
+                    x_ks_str = format_stat_num(cbf_stat.get('延包土地地块数'))
+
+                    if is_new_cbf:
+                        cbfdcjs_hs = (
+                            f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{x_cbf}。"
+                            f"2、延包土地{x_mj_str}亩，{x_ks_str}块。"
+                        )
+                    else:
+                        cbfdcjs_hs = (
+                            f"1、原承包方为{y_cbf}，现二轮延包承包方为{x_cbf}。"
+                            f"2、原承包土地{y_mj_str}亩，{y_ks_str}块；延包土地{x_mj_str}亩，{x_ks_str}块。"
+                        )
+                else:
+                    cbfdcjs_hs = f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{cbfmc}。"
+
+                ws_hs.cell(jishi_row, 2).value = cbfdcjs_hs
+                # 调查记事时间->调查记事栏的N列；调查人员时间->调查人员栏的N列；承包方（代表）时间->承包方（代表）栏的F列；审核意见时间->审核意见栏的N列
+                if time_info:
+                    dt_hs_dc = format_date_str(time_info.get('hs_dc_dt'))
+                    dt_hs_db = format_date_str(time_info.get('hs_db_dt'))
+                    dt_hs_ry = format_date_str(time_info.get('hs_ry_dt'))
+                    dt_hs_sh = format_date_str(time_info.get('hs_sh_dt'))
+                    if dt_hs_dc:
+                        ws_hs.cell(jishi_row + 4, 14).value = dt_hs_dc
+                    if dt_hs_db:
+                        ws_hs.cell(jishi_row + 9, 6).value = dt_hs_db
+                    if dt_hs_ry:
+                        ws_hs.cell(jishi_row + 9, 14).value = dt_hs_ry
+                    if dt_hs_sh:
+                        ws_hs.cell(jishi_row + 14, 14).value = dt_hs_sh
+
+            # 导出文件名：{CBFBM}_{CBFMC}_承包经营权调查结果核实表.xlsx
+            hs_filename = f"{cbfbm}_{cbfmc}_承包经营权调查结果核实表.xlsx"
+            fbf_dir = os.path.join(output_directory, fbfbm) if fbfbm else output_directory
+            safe_cbfmc = cbfmc.replace('/', '').replace('\\', '').replace(':', '').replace('*', '').replace('?', '').replace('\"', '').replace('<', '').replace('>', '').replace('|', '').strip()
+            cbf_dir = os.path.join(fbf_dir, f"{cbfbm}_{safe_cbfmc}")
+            os.makedirs(cbf_dir, exist_ok=True)
+            hs_output_path = os.path.join(cbf_dir, hs_filename)
+            wb_hs.save(hs_output_path)
+
+            # -----------------------------
+            # 4. 生成承包经营权公示结果归户表
+            # -----------------------------
+            wb_gh = openpyxl.load_workbook(gh_tpl_path)
+            ws_gh = wb_gh.active
+
+            # 填充基本信息单元格
+            ws_gh['E3'].value = fbfmc
+            ws_gh['L3'].value = fbffzrxm
+            ws_gh['E5'].value = cbhtbh
+            ws_gh['E7'].value = cbqx_text
+            ws_gh['E9'].value = cbfmc
+            ws_gh['L9'].value = lxdh
+            ws_gh['L10'].value = cbfzjhm
+            ws_gh['E13'].value = cbfdz
+            ws_gh['O13'].value = yzbm
+            ws_gh['M14'].value = f"共 {cbfcysl} 人"
+
+            # 家庭成员信息：startrow=17;如果[cbfcysl]>26，则在43行粘贴标题行，之后在45行插入40行
+            if cbfcysl > 26:
+                insert_rows_with_merges(ws_gh, 43, 2)
+                for r_offset in [0, 1]:
+                    src_r = 15 + r_offset
+                    tgt_r = 43 + r_offset
+                    ws_gh.row_dimensions[tgt_r].height = ws_gh.row_dimensions[src_r].height
+                    for c in range(1, 20):
+                        src_cell = ws_gh.cell(src_r, c)
+                        tgt_cell = ws_gh.cell(tgt_r, c)
+                        tgt_cell.value = src_cell.value
+                        if src_cell.has_style:
+                            tgt_cell.font = copy.copy(src_cell.font)
+                            tgt_cell.border = copy.copy(src_cell.border)
+                            tgt_cell.fill = copy.copy(src_cell.fill)
+                            tgt_cell.number_format = src_cell.number_format
+                            tgt_cell.protection = copy.copy(src_cell.protection)
+                            tgt_cell.alignment = copy.copy(src_cell.alignment)
+
+                ws_gh.merge_cells('A43:A44')
+                ws_gh.merge_cells('B43:B44')
+                ws_gh.merge_cells('C43:D44')
+                ws_gh.merge_cells('E43:F44')
+                ws_gh.merge_cells('G43:G44')
+                ws_gh.merge_cells('H43:I44')
+                ws_gh.merge_cells('J43:O44')
+                ws_gh.merge_cells('P43:S44')
+
+                insert_rows_with_merges(ws_gh, 45, 40)
+                for r in range(45, 85):
+                    ws_gh.row_dimensions[r].height = ws_gh.row_dimensions[17].height
+                    for c in range(1, 20):
+                        src_cell = ws_gh.cell(17, c)
+                        tgt_cell = ws_gh.cell(r, c)
+                        if src_cell.has_style:
+                            tgt_cell.font = copy.copy(src_cell.font)
+                            tgt_cell.border = copy.copy(src_cell.border)
+                            tgt_cell.fill = copy.copy(src_cell.fill)
+                            tgt_cell.number_format = src_cell.number_format
+                            tgt_cell.protection = copy.copy(src_cell.protection)
+                            tgt_cell.alignment = copy.copy(src_cell.alignment)
+                    ws_gh.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
+                    ws_gh.merge_cells(start_row=r, start_column=5, end_row=r, end_column=6)
+                    ws_gh.merge_cells(start_row=r, start_column=8, end_row=r, end_column=9)
+                    ws_gh.merge_cells(start_row=r, start_column=10, end_row=r, end_column=15)
+                    ws_gh.merge_cells(start_row=r, start_column=16, end_row=r, end_column=19)
+                cy_endrow_gh = 84
+            else:
+                cy_endrow_gh = 42
+
+            for idx, m in enumerate(sorted_members_hs):
+                if idx < 26:
+                    curr_row = 17 + idx
+                elif idx < 66:
+                    curr_row = 45 + (idx - 26)
+                else:
+                    break
+
+                cyxm = str(m.get('CYXM', '')) if pd.notna(m.get('CYXM')) else ''
+                cyxb = xb_code_to_name(m.get('CYXB', ''))
+                cyzjhm = str(m.get('CYZJHM', '')).strip() if pd.notna(m.get('CYZJHM')) else ''
+
+                csrq = ''
+                if len(cyzjhm) == 18 and cyzjhm[:14].isdigit():
+                    birth_year = cyzjhm[6:10]
+                    birth_month = cyzjhm[10:12]
+                    birth_day = cyzjhm[12:14]
+                    csrq = f"{birth_year}年{birth_month}月{birth_day}日"
+                elif len(cyzjhm) == 15 and cyzjhm[:12].isdigit():
+                    birth_year = "19" + cyzjhm[6:8]
+                    birth_month = cyzjhm[8:10]
+                    birth_day = cyzjhm[10:12]
+                    csrq = f"{birth_year}年{birth_month}月{birth_day}日"
+
+                yhzgx_raw = str(m.get('YHZGX', '')).strip() if pd.notna(m.get('YHZGX')) else ''
+                yhzgx = yhzgx_code_to_name(yhzgx_raw) if yhzgx_raw.isdigit() else yhzgx_raw
+
+                is_head = yhzgx in ('本人', '户主')
+                m_lxdh = lxdh if is_head else '/'
+                zjmc = '居民身份证' if is_head else '户口簿'
+
+                ws_gh.cell(curr_row, 1).value = cyxm
+                ws_gh.cell(curr_row, 2).value = cyxb
+                ws_gh.cell(curr_row, 3).value = csrq
+                ws_gh.cell(curr_row, 5).value = yhzgx
+                ws_gh.cell(curr_row, 7).value = m_lxdh
+                ws_gh.cell(curr_row, 8).value = zjmc
+                ws_gh.cell(curr_row, 10).value = cyzjhm
+                ws_gh.cell(curr_row, 16).value = '/'
+
+            # 承包地块情况 (归户表)
+            page1_start_gh = cy_endrow_gh + 1
+
+            rel_merges_gh = []
+            for mr in ws_gh.merged_cells.ranges:
+                if page1_start_gh <= mr.min_row <= page1_start_gh + page_len - 1 and page1_start_gh <= mr.max_row <= page1_start_gh + page_len - 1:
+                    rel_merges_gh.append((mr.min_col, mr.min_row - page1_start_gh, mr.max_col, mr.max_row - page1_start_gh))
+
+            # 如果[CBDKZS]>9，增加整页“承包地块情况”行
+            for ep in range(extra_pages):
+                insert_pos = page1_start_gh + page_len * (ep + 1)
+                insert_rows_with_merges(ws_gh, insert_pos, page_len)
+                for i in range(page_len):
+                    src_r = page1_start_gh + i
+                    tgt_r = insert_pos + i
+                    ws_gh.row_dimensions[tgt_r].height = ws_gh.row_dimensions[src_r].height
+                    for c in range(1, 20):
+                        src_cell = ws_gh.cell(src_r, c)
+                        tgt_cell = ws_gh.cell(tgt_r, c)
+                        if src_cell.has_style:
+                            tgt_cell.font = copy.copy(src_cell.font)
+                            tgt_cell.border = copy.copy(src_cell.border)
+                            tgt_cell.fill = copy.copy(src_cell.fill)
+                            tgt_cell.number_format = src_cell.number_format
+                            tgt_cell.protection = copy.copy(src_cell.protection)
+                            tgt_cell.alignment = copy.copy(src_cell.alignment)
+                        if i in [0, 1, 2, 3, 4] or src_cell.value in ['东：', '南：', '西：', '北：']:
+                            tgt_cell.value = src_cell.value
+                for min_col, min_r, max_col, max_r in rel_merges_gh:
+                    ws_gh.merge_cells(start_row=insert_pos + min_r, start_column=min_col, end_row=insert_pos + max_r, end_column=max_col)
+
+            # 地块汇总：B{cy_endrow_gh+3}：地块数量；H{cy_endrow_gh+3}：合同总面积亩；O{cy_endrow_gh+3}：实测总面积亩
+            for p in range(total_pages):
+                p_sum_row = page1_start_gh + p * 42 + 2
+                ws_gh.cell(p_sum_row, 2).value = str(cbdkzs)
+                ws_gh.cell(p_sum_row, 8).value = f"{float(htzmjm):.2f}亩"
+                ws_gh.cell(p_sum_row, 15).value = f"{float(htzmjm):.2f}亩"
+
+            # 填充地块槽位：每4行一个地块 (归户表)
+            for idx, land in enumerate(cbf_lands.to_dict('records')):
+                page_num = idx // 9
+                slot_in_page = idx % 9
+                r0 = page1_start_gh + page_num * 42 + 6 + slot_in_page * 4
+
+                dkbm_val = str(land.get('DKBM', '')).strip()
+                dkbm_last5 = dkbm_val[-5:] if len(dkbm_val) >= 5 else dkbm_val
+                dkmc = str(land.get('DKMC', '')).strip() if pd.notna(land.get('DKMC')) else ''
+
+                clean_east = clean_border_desc(land.get('DKDZ'), '东')
+                clean_south = clean_border_desc(land.get('DKNZ'), '南')
+                clean_west = clean_border_desc(land.get('DKXZ'), '西')
+                clean_north = clean_border_desc(land.get('DKBZ'), '北')
+
+                htmjm_val = land.get('HTMJM')
+                htmjm_str = f"{float(htmjm_val):.2f}" if pd.notna(htmjm_val) and str(htmjm_val).strip() != '' else ''
+
+                scmjm_val = land.get('SCMJM')
+                scmjm_str = f"{float(scmjm_val):.2f}" if pd.notna(scmjm_val) and str(scmjm_val).strip() != '' else htmjm_str
+
+                tdyt_str = tdyt_code_to_name(land.get('TDYT', ''))
+                dklb_str = dklb_code_to_name(land.get('DKLB', ''))
+                tdlylx_str = tdlylx_code_to_name(land.get('TDLYLX', ''))
+                dldj_str = dldj_code_to_name(land.get('DLDJ', ''))
+                sfjbnt_str = sfjbnt_code_to_name(land.get('SFJBNT', ''))
+
+                ws_gh.cell(r0, 1).value = dkbm_last5
+                ws_gh.cell(r0, 2).value = dkmc
+                ws_gh.cell(r0, 4).value = f"东：{clean_east}" if clean_east else "东："
+                ws_gh.cell(r0 + 1, 4).value = f"南：{clean_south}" if clean_south else "南："
+                ws_gh.cell(r0 + 2, 4).value = f"西：{clean_west}" if clean_west else "西："
+                ws_gh.cell(r0 + 3, 4).value = f"北：{clean_north}" if clean_north else "北："
+                ws_gh.cell(r0, 8).value = htmjm_str
+                ws_gh.cell(r0, 9).value = scmjm_str
+                ws_gh.cell(r0, 10).value = tdyt_str
+                ws_gh.cell(r0, 11).value = dklb_str
+                ws_gh.cell(r0, 13).value = tdlylx_str
+                ws_gh.cell(r0, 15).value = dldj_str
+                ws_gh.cell(r0, 17).value = sfjbnt_str
+                ws_gh.cell(r0, 18).value = '家庭承包'
+
+            # 填充“非承包地块情况”页的公示记事
+            jishi_row_gh = None
+            for r in range(page1_start_gh + total_pages * 42, ws_gh.max_row + 1):
+                val_1 = ws_gh.cell(r, 1).value
+                if val_1 and '记事' in str(val_1):
+                    jishi_row_gh = r
+                    break
+
+            if jishi_row_gh is not None:
+                ws_gh.cell(jishi_row_gh, 2).value = cbfdcjs_hs
+                # 公示记事时间->公示记事栏的N列；承包方(代表)时间->承包方(代表)对公示结果的意见 栏的N列；审核意见时间->公示结果审核意见 栏的N列
+                if time_info:
+                    dt_gh_gs = format_date_str(time_info.get('gh_gs_dt'))
+                    dt_gh_db = format_date_str(time_info.get('gh_db_dt'))
+                    dt_gh_sh = format_date_str(time_info.get('gh_sh_dt'))
+                    if dt_gh_gs:
+                        ws_gh.cell(jishi_row_gh + 4, 14).value = dt_gh_gs
+                    if dt_gh_db:
+                        ws_gh.cell(jishi_row_gh + 9, 14).value = dt_gh_db
+                    if dt_gh_sh:
+                        ws_gh.cell(jishi_row_gh + 14, 14).value = dt_gh_sh
+
+            # 导出文件名：{CBFBM}_{CBFMC}_承包经营权公示结果归户表.xlsx
+            gh_filename = f"{cbfbm}_{cbfmc}_承包经营权公示结果归户表.xlsx"
+            gh_output_path = os.path.join(cbf_dir, gh_filename)
+            wb_gh.save(gh_output_path)
+
+            # 解析发包方名称各层级与户主性别
+            zhen_clean, cun_clean, zu_clean = parse_yushe_parts(fbfmc)
+            head_xb = sorted_members_hs[0].get('CYXB', '') if sorted_members_hs else ''
+            xb_str = parse_gender_from_id(cbfzjhm, fallback=xb_code_to_name(head_xb) or '男')
+
+            # -----------------------------
+            # 5. 生成公示无异议声明书
+            # -----------------------------
+            if os.path.exists(sm_tpl_path) and Document is not None:
+                doc_sm = Document(sm_tpl_path)
+                replace_bookmark_in_doc(doc_sm, 'CBFMC', cbfmc)
+                replace_bookmark_in_doc(doc_sm, 'CBFZJHM', cbfzjhm)
+                replace_bookmark_in_doc(doc_sm, 'CJYQMC', cun_clean)
+                replace_bookmark_in_doc(doc_sm, 'CJQYMC', cun_clean)
+                replace_bookmark_in_doc(doc_sm, 'CJQYMC1', cun_clean)
+                replace_bookmark_in_doc(doc_sm, 'XJQYMC', zhen_clean)
+                replace_bookmark_in_doc(doc_sm, 'XJQYMC1', zhen_clean)
+                replace_bookmark_in_doc(doc_sm, 'XB', xb_str)
+
+                if zu_clean:
+                    replace_bookmark_in_doc(doc_sm, 'ZJQYMC', zu_clean)
+                    replace_bookmark_in_doc(doc_sm, 'ZJQYMC1', zu_clean)
+                else:
+                    replace_bookmark_in_doc(doc_sm, 'ZJQYMC', '')
+                    replace_bookmark_in_doc(doc_sm, 'ZJQYMC1', '')
+                    for p in doc_sm.paragraphs:
+                        for i, r in enumerate(p.runs):
+                            if '小组村民' in r.text or '组村民' in r.text:
+                                r.text = r.text.replace('小组村民', '村民').replace('组村民', '村民')
+                                if i >= 1 and p.runs[i - 1].text == ' ':
+                                    p.runs[i - 1].text = ''
+                                if i >= 3 and p.runs[i - 3].text == ' ':
+                                    p.runs[i - 3].text = ''
+                            if '组集体经济组织' in r.text:
+                                r.text = r.text.replace(' 组集体经济组织', '集体经济组织').replace('组集体经济组织', '集体经济组织')
+                                if i >= 1 and p.runs[i - 1].text == ' ':
+                                    p.runs[i - 1].text = ''
+                                if i >= 3 and p.runs[i - 3].text == ' ':
+                                    p.runs[i - 3].text = ''
+
+                # 填写公示无异议声明书时间（替换yyyy->年份，mm->月份，dd->天，RQ->XXXX年XX月XX日）
+                if time_info and time_info.get('sm_dt'):
+                    sm_dt = time_info['sm_dt']
+                    replace_bookmark_in_doc(doc_sm, 'yyyy', str(sm_dt.year))
+                    replace_bookmark_in_doc(doc_sm, 'mm', str(sm_dt.month))
+                    replace_bookmark_in_doc(doc_sm, 'dd', str(sm_dt.day))
+                    replace_bookmark_in_doc(doc_sm, 'RQ', format_date_str(sm_dt))
+
+                sm_filename = f"{cbfbm}_{cbfmc}_公示无异议声明书.docx"
+                doc_sm.save(os.path.join(cbf_dir, sm_filename))
+
+            # -----------------------------
+            # 6. 生成户主声明书
+            # -----------------------------
+            if os.path.exists(hz_tpl_path) and Document is not None:
+                doc_hz = Document(hz_tpl_path)
+                replace_bookmark_in_doc(doc_hz, 'CBFMC', cbfmc)
+                replace_bookmark_in_doc(doc_hz, 'CBFZJHM', cbfzjhm)
+                replace_bookmark_in_doc(doc_hz, 'CBFCYSL', str(cbfcysl))
+                cyxms = '、'.join([str(m['CYXM']) for m in sorted_members_hs if pd.notna(m.get('CYXM')) and str(m.get('CYXM')).strip()])
+                replace_bookmark_in_doc(doc_hz, 'CYXMs', cyxms)
+                replace_bookmark_in_doc(doc_hz, 'FBFMC', fbfmc)
+                replace_bookmark_in_doc(doc_hz, 'XB', xb_str)
+
+                # 填写户主声明书时间（替换书签 RQ->XXXX年XX月XX日）
+                if time_info and time_info.get('hz_rq_dt'):
+                    replace_bookmark_in_doc(doc_hz, 'RQ', format_date_str(time_info['hz_rq_dt']))
+
+                hz_filename = f"{cbfbm}_{cbfmc}_户主声明书.docx"
+                doc_hz.save(os.path.join(cbf_dir, hz_filename))
+
+            # -----------------------------
+            # 7. 生成家庭承包申请书
+            # -----------------------------
+            if os.path.exists(sq_tpl_path) and Document is not None:
+                doc_sq = Document(sq_tpl_path)
+                replace_bookmark_in_doc(doc_sq, 'CBDKZS', str(cbdkzs))
+                replace_bookmark_in_doc(doc_sq, 'CBFMC', cbfmc)
+                replace_bookmark_in_doc(doc_sq, 'CBFZJHM', cbfzjhm)
+                replace_bookmark_in_doc(doc_sq, 'CJQYMC', cun_clean)
+                htzmjm_fmt = f"{float(htzmjm):.2f}"
+                replace_bookmark_in_doc(doc_sq, 'HTZMJM', htzmjm_fmt)
+                # 计算实测面积汇总及各土地利用类型面积
+                # sczmjm->汇总地块SCMJM，stmj->汇总tdlylx为水田的地块的scmjm，sjdmj->汇总tdlylx为水浇地的地块的scmjm，hdmj->sczmjm-stmj-sjdmj
+                sczmjm_val = 0.0
+                stmj_val = 0.0
+                sjdmj_val = 0.0
+                if not cbf_lands.empty:
+                    for _, land_r in cbf_lands.iterrows():
+                        sc_val = land_r.get('SCMJM')
+                        if pd.isna(sc_val) or str(sc_val).strip() == '':
+                            sc_val = land_r.get('HTMJM', 0.0)
+                        try:
+                            sc_float = float(sc_val)
+                        except (ValueError, TypeError):
+                            sc_float = 0.0
+                        sczmjm_val += sc_float
+
+                        tdly_code = str(land_r.get('TDLYLX', '')).strip()
+                        tdly_name = tdlylx_code_to_name(tdly_code)
+                        if tdly_code in ('011', '11') or tdly_name == '水田':
+                            stmj_val += sc_float
+                        elif tdly_code in ('012', '12') or tdly_name == '水浇地':
+                            sjdmj_val += sc_float
+
+                hdmj_val = sczmjm_val - stmj_val - sjdmj_val
+
+                replace_bookmark_in_doc(doc_sq, 'SCZMJM', f"{sczmjm_val:.2f}")
+                replace_bookmark_in_doc(doc_sq, 'STMJ', f"{stmj_val:.2f}")
+                replace_bookmark_in_doc(doc_sq, 'SJDMJ', f"{sjdmj_val:.2f}")
+                replace_bookmark_in_doc(doc_sq, 'HDMJ', f"{hdmj_val:.2f}")
+                replace_bookmark_in_doc(doc_sq, 'XJQYMC', zhen_clean)
+
+                if zu_clean:
+                    replace_bookmark_in_doc(doc_sq, 'ZJQYMC', ' ' + zu_clean)
+                else:
+                    replace_bookmark_in_doc(doc_sq, 'ZJQYMC', '')
+                    for p in doc_sq.paragraphs:
+                        for r in p.runs:
+                            if '组农村耕地' in r.text:
+                                r.text = r.text.replace('组农村耕地', '农村耕地')
+
+                # 替换承包期限（从CBHT获取正确的起止年月日）
+                q_y = ht_info.get('Q_Y', '2024')
+                q_m = ht_info.get('Q_M', '01')
+                q_d = ht_info.get('Q_D', '01')
+                z_y = ht_info.get('Z_Y', '2053')
+                z_m = ht_info.get('Z_M', '12')
+                z_d = ht_info.get('Z_D', '31')
+
+                for p in doc_sq.paragraphs:
+                    if '承包期限为' in p.text:
+                        for i, r in enumerate(p.runs):
+                            if '承包期限为' in r.text and i + 11 < len(p.runs):
+                                p.runs[i + 1].text = q_y
+                                p.runs[i + 3].text = q_m
+                                p.runs[i + 5].text = q_d
+                                p.runs[i + 7].text = f" {z_y} "
+                                p.runs[i + 9].text = z_m
+                                p.runs[i + 11].text = z_d
+                                break
+
+                # 填写家庭承包申请书时间（替换书签 RQ->XXXX年XX月XX日）
+                if time_info and time_info.get('sq_dt'):
+                    replace_bookmark_in_doc(doc_sq, 'RQ', format_date_str(time_info['sq_dt']))
+
+                sq_filename = f"{cbfbm}_{cbfmc}_家庭承包申请书.docx"
+                doc_sq.save(os.path.join(cbf_dir, sq_filename))
+
+            # -----------------------------
+            # 8. 生成承包地块调查表（每个地块一个独立Excel文件）
+            # -----------------------------
+            if os.path.exists(dk_tpl_path) and not cbf_lands.empty:
+                def set_check_dk(text, target_label, all_labels):
+                    if not text:
+                        return text
+                    res = str(text)
+                    for lbl in all_labels:
+                        if lbl == target_label:
+                            # 选中项：将未选中 £（或旧字符）替换为 R
+                            res = res.replace(f'£{lbl}', f'R{lbl}').replace(f'□{lbl}', f'R{lbl}').replace(f'þ{lbl}', f'R{lbl}')
+                        else:
+                            # 未选中项：将 R（或旧字符）替换为未选中 £
+                            res = res.replace(f'R{lbl}', f'£{lbl}').replace(f'þ{lbl}', f'£{lbl}').replace(f'□{lbl}', f'£{lbl}')
+                    return res
+
+                # 建立本批 JZD 字典（记录 JZDH、BSM、JBLX 等）
+                jzd_dict = {}
+                if not jzd_df.empty and 'JZDH' in jzd_df.columns:
+                    for _, z in jzd_df.iterrows():
+                        jzd_dict[str(z['JZDH'])] = {
+                            'JZDH': str(z.get('JZDH', '')),
+                            'BSM': str(z.get('BSM', '')),
+                            'JBLX': str(z.get('JBLX', '')).strip(),
+                            'JZDLX': str(z.get('JZDLX', '')).strip(),
+                        }
+
+                # 代码直接映射列号（严格按照字典值匹配对应表头列位）
+                JBLX_CODE_TO_COL = {
+                    '6': 5,   # 无标志 (E)
+                    '7': 3,   # 木桩 (C)
+                    '8': 4,   # 埋石 (D)
+                }
+                JZXLB_CODE_TO_COL = {
+                    '01': 7,  # 田埂 (G)
+                    '1': 7,
+                    '02': 9,  # 沟渠 (I)
+                    '2': 9,
+                    '03': 10, # 道路 (J)
+                    '3': 10,
+                    '04': 11, # 行树 (K)
+                    '4': 11,
+                    '05': 12, # 围墙 (L)
+                    '5': 12,
+                    '06': 13, # 墙壁 (M)
+                    '6': 13,
+                    '07': 14, # 栅栏 (N)
+                    '7': 14,
+                    '08': 15, # 两点连线 (O)
+                    '8': 15,
+                }
+                JZXWZ_CODE_TO_COL = {
+                    '01': 19, # 内 (S)
+                    '1': 19,
+                    '02': 20, # 中 (T)
+                    '2': 20,
+                    '03': 21, # 外 (U)
+                    '3': 21,
+                }
+
+                CHECK_CHAR = '\u00fc'  # 'ü'，在 Wingdings 字体下显示为对勾符号 (Unicode U+00FC)
+                wingdings_font = openpyxl.styles.Font(name='Wingdings', size=9.0)
+
+                def get_pt_info(pt_id):
+                    info = jzd_dict.get(str(pt_id), {})
+                    if isinstance(info, dict):
+                        jzdh_val = info.get('JZDH') or str(pt_id)
+                        jblx_code = str(info.get('JBLX', '6')).strip()
+                    else:
+                        jzdh_val = str(info) or str(pt_id)
+                        jblx_code = '6'
+                    jblx_col = JBLX_CODE_TO_COL.get(jblx_code, 5)
+                    return jzdh_val, jblx_col
+
+                def format_jzxsm_continuous(orig_sm, start_num, end_num):
+                    """
+                    规范化界址线说明，保证起点和终点为连续的 T1-T2, T2-T3...Tn-T1，
+                    避免共享界址线或原始数据中保留邻宗地文本导致的编号跳跃或重复。
+                    """
+                    orig = str(orig_sm).strip() if orig_sm else ''
+                    if not orig:
+                        return f'由T{start_num}至T{end_num}'
+                    if '沿' in orig:
+                        m = re.search(r'(沿.*?)(?:[至到](?:T\d+|\d+)?|$)', orig)
+                        if m:
+                            middle = m.group(1).rstrip('至').rstrip('到')
+                            return f'由T{start_num}{middle}至T{end_num}'
+                        return f'由T{start_num}至T{end_num}'
+                    return f'由T{start_num}{orig}至T{end_num}'
+
+                for _, land_item in cbf_lands.iterrows():
+                    dkbm_item = str(land_item.get('DKBM', '')).strip()
+                    if not dkbm_item:
+                        continue
+                    dkmc_item = str(land_item.get('DKMC', '')).strip() if pd.notna(land_item.get('DKMC')) else ''
+                    dkbm_last5 = dkbm_item[-5:] if len(dkbm_item) >= 5 else dkbm_item
+
+                    htmjm_val = land_item.get('HTMJM')
+                    htmjm_str = f"{float(htmjm_val):.2f}" if pd.notna(htmjm_val) and str(htmjm_val).strip() != '' else ''
+                    scmjm_val = land_item.get('SCMJM')
+                    scmjm_str = f"{float(scmjm_val):.2f}" if pd.notna(scmjm_val) and str(scmjm_val).strip() != '' else htmjm_str
+
+                    # 载入模板
+                    wb_dk = openpyxl.load_workbook(dk_tpl_path)
+                    ws_dk = wb_dk.active
+
+                    # 基本信息
+                    ws_dk['D1'].value = fbfbm
+                    ws_dk['O1'].value = cbfmc
+                    ws_dk['C5'].value = dkbm_last5
+                    ws_dk['M5'].value = dkmc_item
+                    ws_dk['W5'].value = htmjm_str
+                    ws_dk['AD5'].value = scmjm_str
+
+                    # 四至
+                    clean_east = clean_border_desc(land_item.get('DKDZ'), '东')
+                    clean_south = clean_border_desc(land_item.get('DKNZ'), '南')
+                    clean_west = clean_border_desc(land_item.get('DKXZ'), '西')
+                    clean_north = clean_border_desc(land_item.get('DKBZ'), '北')
+                    ws_dk['B6'].value = clean_east or (str(land_item.get('DKDZ', '')).strip() if pd.notna(land_item.get('DKDZ')) else '')
+                    ws_dk['J6'].value = clean_south or (str(land_item.get('DKNZ', '')).strip() if pd.notna(land_item.get('DKNZ')) else '')
+                    ws_dk['S6'].value = clean_west or (str(land_item.get('DKXZ', '')).strip() if pd.notna(land_item.get('DKXZ')) else '')
+                    ws_dk['Z6'].value = clean_north or (str(land_item.get('DKBZ', '')).strip() if pd.notna(land_item.get('DKBZ')) else '')
+
+                    # 复选框匹配
+                    syqxz_raw = str(land_item.get('SYQXZ', '')).strip()
+                    syqxz_target = SYQXZ_MAP.get(syqxz_raw, syqxz_code_to_name(syqxz_raw))
+                    if not syqxz_target:
+                        syqxz_target = '村民小组'
+
+                    ws_dk['F2'].value = set_check_dk(ws_dk['F2'].value, syqxz_target, ['国有土地所有权', '集体土地所有权', '村民小组', '村级集体经济组织'])
+                    ws_dk['F3'].value = set_check_dk(ws_dk['F3'].value, syqxz_target, ['乡级集体经济组织', '其他农民集体经济组织'])
+                    ws_dk['F4'].value = set_check_dk(ws_dk['F4'].value, '家庭承包', ['家庭承包', '招标', '公开协商', '拍卖', '转让', '互换', '其他'])
+
+                    tdyt_name = tdyt_code_to_name(land_item.get('TDYT', '')) or '种植业'
+                    tdyt_labels = ['种植业', '林业', '畜牧业', '渔业', '其他']
+                    for r_chk, lbl in [(7, '种植业'), (8, '林业'), (9, '畜牧业'), (10, '渔业'), (11, '其他')]:
+                        ws_dk.cell(r_chk, 2).value = set_check_dk(ws_dk.cell(r_chk, 2).value, tdyt_name, tdyt_labels)
+
+                    dklb_name = dklb_code_to_name(land_item.get('DKLB', '')) or '承包地块'
+                    dklb_labels = ['承包地块', '自留地', '机动地', '开荒地', '其他集体土地']
+                    for r_chk, lbl in [(7, '承包地块'), (8, '自留地'), (9, '机动地'), (10, '开荒地'), (11, '其他集体土地')]:
+                        ws_dk.cell(r_chk, 8).value = set_check_dk(ws_dk.cell(r_chk, 8).value, dklb_name, dklb_labels)
+
+                    dldj_name = dldj_code_to_name(land_item.get('DLDJ', ''))
+                    # 确保 label 格式为 "X等地"
+                    if dldj_name and not dldj_name.endswith('地'):
+                        dldj_target = f"{dldj_name}地"
+                    else:
+                        dldj_target = dldj_name
+                    for r_chk, pair in [(7, ['一等地', '二等地']), (8, ['三等地', '四等地']), (9, ['五等地', '六等地']), (10, ['七等地', '八等地']), (11, ['九等地', '十等地'])]:
+                        ws_dk.cell(r_chk, 15).value = set_check_dk(ws_dk.cell(r_chk, 15).value, dldj_target, pair)
+
+                    tdlylx_raw_name = tdlylx_code_to_name(land_item.get('TDLYLX', ''))
+                    tdlylx_labels = ['水田', '旱地', '水浇地', '果园', '茶园', '其他']
+                    tdlylx_name = tdlylx_raw_name if tdlylx_raw_name in tdlylx_labels else '其他'
+                    for r_chk, lbl in [(7, '水田'), (8, '旱地'), (9, '水浇地'), (10, '果园'), (11, '茶园'), (12, '其他')]:
+                        ws_dk.cell(r_chk, 24).value = set_check_dk(ws_dk.cell(r_chk, 24).value, tdlylx_name, tdlylx_labels)
+
+                    sfjbnt_name = sfjbnt_code_to_name(land_item.get('SFJBNT', '')) or '否'
+                    ws_dk['AB10'].value = set_check_dk(ws_dk['AB10'].value, sfjbnt_name, ['是', '否'])
+
+                    # 提取界址线并进行拓扑闭环排序与点号解算
+                    lines = []
+                    ordered_pts = []
+                    if not jzx_df.empty and 'DKBM' in jzx_df.columns:
+                        jzx_sub = jzx_df[jzx_df['DKBM'].astype(str).str.contains(dkbm_item, na=False)].copy()
+                        if not jzx_sub.empty:
+                            lines, ordered_pts = chain_parcel_boundary(jzx_sub, dkbm_item)
+
+                    num_lines = len(lines)
+
+                    line_cols = [
+                        (7, 7), (8, 8), (9, 9), (10, 10), (11, 11), (12, 12), (13, 13), (14, 14),
+                        (15, 16), (17, 18), (19, 19), (20, 20), (21, 21), (22, 25), (26, 27), (28, 29)
+                    ]
+
+                    title_merges = [
+                        (1, 0, 1, 2), (2, 0, 2, 2), (3, 0, 6, 0), (3, 1, 3, 2), (4, 1, 4, 2), (5, 1, 6, 2),
+                        (7, 0, 18, 0), (7, 1, 7, 2), (8, 1, 8, 2), (9, 1, 9, 2), (10, 1, 10, 2), (11, 1, 11, 2),
+                        (12, 1, 12, 2), (13, 1, 13, 2), (14, 1, 14, 2), (15, 1, 16, 2), (17, 1, 18, 2),
+                        (19, 0, 21, 0), (19, 1, 19, 2), (20, 1, 20, 2), (21, 1, 21, 2), (22, 0, 25, 2),
+                        (26, 0, 31, 0), (26, 1, 29, 1), (26, 2, 27, 2), (28, 2, 29, 2), (30, 1, 31, 2)
+                    ]
+
+                    thin_border_side = openpyxl.styles.Side(style="thin", color="000000")
+
+                    def set_last_row_style(ws, last_row):
+                        # 补全最后一行水平合并 (O:P, Q:R, V:Y, Z:AA, AB:AC)
+                        for min_c, max_c in [(15, 16), (17, 18), (22, 25), (26, 27), (28, 29)]:
+                            ws.merge_cells(start_row=last_row, start_column=min_c, end_row=last_row, end_column=max_c)
+                        # 补齐整行 A~AE (1~31 列) 的边框，特别是 bottom=thin 下边框
+                        for c in range(1, 32):
+                            cell = ws.cell(last_row, c)
+                            cur_b = cell.border
+                            l = cur_b.left.style if cur_b and cur_b.left else "thin"
+                            r = cur_b.right.style if cur_b and cur_b.right else "thin"
+                            t = cur_b.top.style if cur_b and cur_b.top else "thin"
+                            cell.border = openpyxl.styles.Border(
+                                left=openpyxl.styles.Side(style=l, color="000000") if l else thin_border_side,
+                                right=openpyxl.styles.Side(style=r, color="000000") if r else thin_border_side,
+                                top=openpyxl.styles.Side(style=t, color="000000") if t else thin_border_side,
+                                bottom=thin_border_side
+                            )
+
+                    # 分页与行布局处理：
+                    # 第一页界址点区域严格使用模版默认行（16~40行），最多容纳 12 条界址线，
+                    # 最后一个界址点（第13个点槽位，单页闭合点或跨页第13个点）最大放置在第 39~40 行的合并单元格中，不向下插入额外行；
+                    # 若界址线 > 12 条，则第一页取前 12 条线后在第 40 行处分页，从第 41 行起生成第二页及后续页（每页容纳 17 条线，共 38 行）；
+                    # 签名栏随之平移到最后一页底部。
+                    if num_lines <= 12:
+                        # -------------------------
+                        # 单页情况（界址线 <= 12条，点数 <= 13）
+                        # -------------------------
+                        set_last_row_style(ws_dk, 40)
+
+                        # 单页填充界址点与界址线
+                        first_pt_id = ''
+                        first_pt_pre = ''
+                        first_jblx_col = 5
+                        for k, line in enumerate(lines):
+                            pt_row = 16 if k == 0 else (15 + k * 2)
+                            line_row = 16 + k * 2
+
+                            pt_id = ordered_pts[k] if k < len(ordered_pts) else str(line.get('QJZDH', '')).strip()
+                            jzdh_val, jblx_col = get_pt_info(pt_id)
+                            pre_num = f'J{k + 1}'
+                            if k == 0:
+                                first_pt_id = jzdh_val
+                                first_pt_pre = pre_num
+                                first_jblx_col = jblx_col
+
+                            ws_dk.cell(pt_row, 1).value = jzdh_val
+                            ws_dk.cell(pt_row, 2).value = pre_num
+                            c_jblx = ws_dk.cell(pt_row, jblx_col)
+                            c_jblx.value = CHECK_CHAR
+                            c_jblx.font = wingdings_font
+
+                            jzxlb_code = str(line.get('JZXLB', '01')).strip()
+                            jzxlb_col = JZXLB_CODE_TO_COL.get(jzxlb_code, 7)
+                            start_t = k + 1
+                            end_t = 1 if (k + 1 == num_lines) else (k + 2)
+                            jzxsm_text = format_jzxsm_continuous(line.get('JZXSM', ''), start_t, end_t)
+
+                            c_jzxlb = ws_dk.cell(line_row, jzxlb_col)
+                            c_jzxlb.value = CHECK_CHAR
+                            c_jzxlb.font = wingdings_font
+
+                            jzxwz_raw = str(line.get('JZXWZ', '02')).strip()
+                            jzxwz_col = JZXWZ_CODE_TO_COL.get(jzxwz_raw, 20)
+
+                            c_jzxwz = ws_dk.cell(line_row, jzxwz_col)
+                            c_jzxwz.value = CHECK_CHAR
+                            c_jzxwz.font = wingdings_font
+
+                            ws_dk.cell(line_row, 22).value = jzxsm_text
+                            ws_dk.cell(line_row, 26).value = line.get('PLDWQLR', cbfmc)
+
+                        if lines:
+                            close_pt_row = 15 + num_lines * 2
+                            ws_dk.cell(close_pt_row, 1).value = first_pt_id
+                            ws_dk.cell(close_pt_row, 2).value = first_pt_pre
+                            c_close = ws_dk.cell(close_pt_row, first_jblx_col)
+                            c_close.value = CHECK_CHAR
+                            c_close.font = wingdings_font
+
+                    else:
+                        # -------------------------
+                        # 多页情况（界址线 > 12条）
+                        # 第一页固定放置 12 条线，第 13 个点最大放置在第 39~40 行合并单元格
+                        # -------------------------
+                        pages_lines = [lines[:12]]
+                        rem_lines = lines[12:]
+                        while rem_lines:
+                            pages_lines.append(rem_lines[:17])
+                            rem_lines = rem_lines[17:]
+
+                        set_last_row_style(ws_dk, 40)
+                        # 在第一页末尾（第 40 行下方，即第 41 行前）插入分页符
+                        ws_dk.row_breaks.append(Break(id=40))
+
+                        insert_pos_cur = 41
+                        for page_idx in range(1, len(pages_lines)):
+                            # 每一页固定插入满 18 行（18个界址点位置/17条线，35行点线槽位 + 3行标题 = 38行）
+                            p_total_rows = 3 + 1 + 17 * 2  # 固定 38 行
+
+                            insert_rows_with_merges(ws_dk, insert_pos_cur, p_total_rows)
+
+                            # 复制 3 行标题行（源自 13~15）
+                            for i in range(3):
+                                src_r = 13 + i
+                                tgt_r = insert_pos_cur + i
+                                ws_dk.row_dimensions[tgt_r].height = ws_dk.row_dimensions[src_r].height
+                                for c in range(1, 32):
+                                    src_cell = ws_dk.cell(src_r, c)
+                                    tgt_cell = ws_dk.cell(tgt_r, c)
+                                    tgt_cell.value = src_cell.value
+                                    if src_cell.has_style:
+                                        tgt_cell.font = copy.copy(src_cell.font)
+                                        tgt_cell.border = copy.copy(src_cell.border)
+                                        tgt_cell.fill = copy.copy(src_cell.fill)
+                                        tgt_cell.alignment = copy.copy(src_cell.alignment)
+
+                            for min_c, min_r, max_c, max_r in title_merges:
+                                ws_dk.merge_cells(start_row=insert_pos_cur + min_r, start_column=min_c, end_row=insert_pos_cur + max_r, end_column=max_c)
+
+                            pt_start_row = insert_pos_cur + 3
+                            pt_end_row = insert_pos_cur + p_total_rows - 1
+                            for r_ins in range(pt_start_row, pt_end_row + 1):
+                                ws_dk.row_dimensions[r_ins].height = ws_dk.row_dimensions[16].height
+                                src_r = 16 if ((r_ins - pt_start_row) % 2 == 0) else 17
+                                for c in range(1, 32):
+                                    src_cell = ws_dk.cell(src_r, c)
+                                    tgt_cell = ws_dk.cell(r_ins, c)
+                                    if src_cell.has_style:
+                                        tgt_cell.font = copy.copy(src_cell.font)
+                                        tgt_cell.border = copy.copy(src_cell.border)
+                                        tgt_cell.fill = copy.copy(src_cell.fill)
+                                        tgt_cell.alignment = copy.copy(src_cell.alignment)
+
+                            ws_dk.merge_cells(start_row=pt_start_row, start_column=30, end_row=pt_end_row, end_column=31)
+                            ws_dk.merge_cells(start_row=pt_start_row, start_column=5, end_row=pt_start_row, end_column=6)
+
+                            for k in range(17):
+                                r_line = pt_start_row + k * 2
+                                for min_c, max_c in line_cols:
+                                    ws_dk.merge_cells(start_row=r_line, start_column=min_c, end_row=r_line + 1, end_column=max_c)
+                                r_pt = (pt_start_row - 1) + (k + 1) * 2
+                                for col in [1, 2, 3, 4]:
+                                    ws_dk.merge_cells(start_row=r_pt, start_column=col, end_row=r_pt + 1, end_column=col)
+                                ws_dk.merge_cells(start_row=r_pt, start_column=5, end_row=r_pt + 1, end_column=6)
+
+                            set_last_row_style(ws_dk, pt_end_row)
+
+                            # 若还有下一页，在该页末尾插入分页符
+                            if page_idx < len(pages_lines) - 1:
+                                ws_dk.row_breaks.append(Break(id=pt_end_row))
+
+                            insert_pos_cur += p_total_rows
+
+                        # 跨页填充数据
+                        first_pt_id = ''
+                        first_pt_pre = ''
+                        first_jblx_col = 5
+                        cur_row_base = 16
+                        global_line_idx = 0
+
+                        for page_idx, p_lines in enumerate(pages_lines):
+                            cur_pt_start = 16 if page_idx == 0 else (cur_row_base + 3)
+
+                            # 填充该页顶部的起始界址点
+                            top_pt_id = ordered_pts[global_line_idx] if global_line_idx < len(ordered_pts) else str(p_lines[0].get('QJZDH', '')).strip()
+                            top_jzdh, top_jblx_col = get_pt_info(top_pt_id)
+                            top_pre_num = f'J{global_line_idx + 1}'
+
+                            if page_idx == 0:
+                                first_pt_id = top_jzdh
+                                first_pt_pre = top_pre_num
+                                first_jblx_col = top_jblx_col
+
+                            ws_dk.cell(cur_pt_start, 1).value = top_jzdh
+                            ws_dk.cell(cur_pt_start, 2).value = top_pre_num
+                            c_jblx = ws_dk.cell(cur_pt_start, top_jblx_col)
+                            c_jblx.value = CHECK_CHAR
+                            c_jblx.font = wingdings_font
+
+                            # 依次填充界址线及后续界址点
+                            for k, line in enumerate(p_lines):
+                                line_row = cur_pt_start + k * 2
+                                g_idx = global_line_idx + k
+
+                                jzxlb_code = str(line.get('JZXLB', '01')).strip()
+                                jzxlb_col = JZXLB_CODE_TO_COL.get(jzxlb_code, 7)
+                                start_t = g_idx + 1
+                                end_t = 1 if (g_idx + 1 == num_lines) else (g_idx + 2)
+                                jzxsm_text = format_jzxsm_continuous(line.get('JZXSM', ''), start_t, end_t)
+
+                                c_jzxlb = ws_dk.cell(line_row, jzxlb_col)
+                                c_jzxlb.value = CHECK_CHAR
+                                c_jzxlb.font = wingdings_font
+
+                                jzxwz_raw = str(line.get('JZXWZ', '02')).strip()
+                                jzxwz_col = JZXWZ_CODE_TO_COL.get(jzxwz_raw, 20)
+                                c_jzxwz = ws_dk.cell(line_row, jzxwz_col)
+                                c_jzxwz.value = CHECK_CHAR
+                                c_jzxwz.font = wingdings_font
+
+                                ws_dk.cell(line_row, 22).value = jzxsm_text
+                                ws_dk.cell(line_row, 26).value = line.get('PLDWQLR', cbfmc)
+
+                                # 线的下一端点
+                                next_pt_row = (cur_pt_start - 1) + (k + 1) * 2
+                                next_g_idx = g_idx + 1
+                                if next_g_idx == num_lines:
+                                    # 闭合回起始点
+                                    next_jzdh = first_pt_id
+                                    next_pre = first_pt_pre
+                                    next_col = first_jblx_col
+                                else:
+                                    next_pt_id = ordered_pts[next_g_idx] if next_g_idx < len(ordered_pts) else str(line.get('ZJZDH', '')).strip()
+                                    next_jzdh, next_col = get_pt_info(next_pt_id)
+                                    next_pre = f'J{next_g_idx + 1}'
+
+                                ws_dk.cell(next_pt_row, 1).value = next_jzdh
+                                ws_dk.cell(next_pt_row, 2).value = next_pre
+                                c_next = ws_dk.cell(next_pt_row, next_col)
+                                c_next.value = CHECK_CHAR
+                                c_next.font = wingdings_font
+
+                            global_line_idx += len(p_lines)
+                            if page_idx == 0:
+                                cur_row_base = 41
+                            else:
+                                cur_row_base += 38
+
+                    # 填写地块调查表时间（承包方（代表）时间->承包方（代表）栏的H列；调查记事时间->调查记事栏的Y列；审核意见时间->审核意见栏的Y列）
+                    if time_info:
+                        sign_r = None
+                        audit_r = None
+                        for r_chk in range(16, ws_dk.max_row + 1):
+                            v_c3 = str(ws_dk.cell(r_chk, 3).value or '')
+                            if '签字' in v_c3:
+                                sign_r = r_chk
+                            elif '审核人' in v_c3:
+                                audit_r = r_chk
+
+                        dt_dk_db = format_date_str(time_info.get('dk_db_dt'))
+                        dt_dk_dc = format_date_str(time_info.get('dk_dc_dt'))
+                        dt_dk_sh = format_date_str(time_info.get('dk_sh_dt'))
+
+                        if sign_r is not None:
+                            if dt_dk_db:
+                                ws_dk.cell(sign_r, 8).value = dt_dk_db
+                            if dt_dk_dc:
+                                ws_dk.cell(sign_r, 25).value = dt_dk_dc
+                        if audit_r is not None and dt_dk_sh:
+                            ws_dk.cell(audit_r, 25).value = dt_dk_sh
+
+                    # 保存地块调查表
+                    dk_filename = f"{cbfbm}_{cbfmc}_地块调查表{dkbm_item}.xlsx"
+                    ws_dk.title = "承包地块调查表"
+                    wb_dk.save(os.path.join(cbf_dir, dk_filename))
+
+        logger.info(f"榆社县一户一档材料生成完成！共处理 {len(fbf_df)} 个发包方，{len(cbf_df)} 户承包方。")
+
+    finally:
+        conn.close()
+
+
 # 示例调用
 if __name__ == "__main__":
     print("选择功能：")
@@ -5262,8 +7224,9 @@ if __name__ == "__main__":
     print("5. 生成户主代表声明书")
     print("6. 生成金寨县公示表")
     print("7. 生成榆社县摸底调查表")
+    print("8. 生成榆社县一户一档材料")
 
-    choice = input("请输入选择 (1/2/3/4/5/6/7): ")
+    choice = input("请输入选择 (1/2/3/4/5/6/7/8): ")
 
     if choice == "1":
         print("\n=== 生成公示表 ===")
@@ -5387,6 +7350,13 @@ if __name__ == "__main__":
         shp_file_path = input("请输入shp文件的路径: ")
         output_directory = input("请输入输出目录的路径: ")
         generate_yushe_mdb_tables_only(mdb_file_path, shp_file_path, output_directory)
+
+    elif choice == "8":
+        print("\n=== 生成榆社县一户一档材料 ===")
+        mdb_file_path = input("请输入mdb文件: ")
+        shp_file_path = input("请输入shp文件的路径: ")
+        output_directory = input("请输入输出目录的路径: ")
+        generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_directory)
 
     else:
         print("无效选择，请重新运行程序")

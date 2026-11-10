@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                             QTextEdit, QScrollArea, QSplitter, QRadioButton, QButtonGroup, QTabWidget)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QColor
-from GenerateGSB import generate_gsb, generate_mdb_tables_only, generate_jinzhai_mdb_tables_only, generate_dkdc_tables_only, generate_hzzz_sms_only, generate_yhzd_cover_only, generate_jinzhai_gsb_only, generate_yushe_mdb_tables_only, generate_yushe_gsb_only, generate_fbfdc_table_only, generate_yhqd_table_only, generate_yjjsqd_table_only, generate_tsqt_statistics, generate_tsqt_statistics_xlsx, generate_jinzhai_survey_info_tables_only
+from GenerateGSB import generate_gsb, generate_mdb_tables_only, generate_jinzhai_mdb_tables_only, generate_dkdc_tables_only, generate_hzzz_sms_only, generate_yhzd_cover_only, generate_jinzhai_gsb_only, generate_yushe_mdb_tables_only, generate_yushe_gsb_only, generate_fbfdc_table_only, generate_yhqd_table_only, generate_yjjsqd_table_only, generate_tsqt_statistics, generate_tsqt_statistics_xlsx, generate_jinzhai_survey_info_tables_only, generate_yushe_yhzd_materials_only
 from logger_util import setup_logger
 
 # 全局日志记录器
@@ -258,6 +258,28 @@ class GenerateYusheGSBThread(QThread):
             logger.error(f"生成榆社县公示表时发生错误: {str(e)}", exc_info=True)
             self.finished.emit(False, f"发生错误: {str(e)}")
 
+class GenerateYusheYHZDThread(QThread):
+    """处理生成榆社县一户一档材料的线程，避免GUI冻结"""
+    finished = pyqtSignal(bool, str)
+    progress = pyqtSignal(str)
+
+    def __init__(self, mdb_file, shp_file, output_dir):
+        super().__init__()
+        self.mdb_file = mdb_file
+        self.shp_file = shp_file
+        self.output_dir = output_dir
+
+    def run(self):
+        try:
+            self.progress.emit("开始生成榆社县一户一档材料...")
+            logger.info(f"开始生成榆社县一户一档材料，参数：mdb={self.mdb_file}, shp={self.shp_file}, output={self.output_dir}")
+            generate_yushe_yhzd_materials_only(self.mdb_file, self.shp_file, self.output_dir)
+            logger.info("榆社县一户一档材料生成成功")
+            self.finished.emit(True, "榆社县一户一档材料生成成功！")
+        except Exception as e:
+            logger.error(f"生成榆社县一户一档材料时发生错误: {str(e)}", exc_info=True)
+            self.finished.emit(False, f"发生错误: {str(e)}")
+
 class GenerateFBFDCThread(QThread):
     """处理生成发包方调查表的线程，避免GUI冻结"""
     finished = pyqtSignal(bool, str)
@@ -448,6 +470,7 @@ class MainWindow(QMainWindow):
         # 榆社县功能
         self.generate_yushe_radio = QRadioButton("生成摸底调查表")
         self.generate_yushe_gsb_radio = QRadioButton("生成公示表")
+        self.generate_yushe_yhzd_radio = QRadioButton("生成一户一档材料")
         
         # 明光市功能
         self.generate_fbfdc_radio = QRadioButton("生成发包方调查表")
@@ -469,6 +492,7 @@ class MainWindow(QMainWindow):
         self.function_button_group.addButton(self.generate_yhzd_radio, 7)
         self.function_button_group.addButton(self.generate_yushe_radio, 8)
         self.function_button_group.addButton(self.generate_yushe_gsb_radio, 14)
+        self.function_button_group.addButton(self.generate_yushe_yhzd_radio, 15)
         self.function_button_group.addButton(self.generate_fbfdc_radio, 9)
         self.function_button_group.addButton(self.generate_yhqd_radio, 10)
         self.function_button_group.addButton(self.generate_yjjsqd_radio, 11)
@@ -487,6 +511,7 @@ class MainWindow(QMainWindow):
         
         yushe_layout.addWidget(self.generate_yushe_radio)
         yushe_layout.addWidget(self.generate_yushe_gsb_radio)
+        yushe_layout.addWidget(self.generate_yushe_yhzd_radio)
         
         # 明光市布局
         mingguang_layout.addWidget(self.generate_fbfdc_radio)
@@ -791,6 +816,11 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "功能提示",
                                   "生成榆社县公示表需要较长时间，请耐心等待。\n生成的榆社县公示表文件将保存在指定的输出目录中。")
             logger.info("开始生成榆社县公示表")
+        elif self.current_function == "yushe_yhzd":
+            self.status_label.setText("正在生成榆社县一户一档材料，请稍候...")
+            QMessageBox.information(self, "功能提示",
+                                  "生成榆社县一户一档材料需要较长时间，请耐心等待。\n生成的一户一档材料将保存在指定的输出目录中。")
+            logger.info("开始生成榆社县一户一档材料")
         elif self.current_function == "fbfdc":
             self.status_label.setText("正在生成发包方调查表，请稍候...")
             logger.info("开始生成发包方调查表")
@@ -827,6 +857,8 @@ class MainWindow(QMainWindow):
             self.worker_thread = GenerateYusheMDBThread(mdb_file, shp_file, output_dir)
         elif self.current_function == "yushe_gsb":
             self.worker_thread = GenerateYusheGSBThread(mdb_file, shp_file, output_dir)
+        elif self.current_function == "yushe_yhzd":
+            self.worker_thread = GenerateYusheYHZDThread(mdb_file, shp_file, output_dir)
         elif self.current_function == "fbfdc":
             self.worker_thread = GenerateFBFDCThread(mdb_file, output_dir)
         elif self.current_function == "yhqd":
@@ -840,7 +872,7 @@ class MainWindow(QMainWindow):
         self.worker_thread.finished.connect(self.process_finished)
         self.worker_thread.start()
 
-        function_name = {"gsb": "公示表", "mdb": "摸底调查表", "jinzhai": "金寨县摸底调查表", "jinzhai_gsb": "金寨县公示表", "jinzhai_survey_info": "金寨县调查信息表", "dkdc": "承包地块调查表", "hzzz": "户主代表声明书", "yhzd": "一户一档封面", "yushe": "榆社县摸底调查表", "yushe_gsb": "榆社县公示表", "fbfdc": "发包方调查表", "yhqd": "一户一档清单", "yjjsqd": "移交技术资料清单", "tsqt": "特殊群体统计表"}.get(self.current_function, "")
+        function_name = {"gsb": "公示表", "mdb": "摸底调查表", "jinzhai": "金寨县摸底调查表", "jinzhai_gsb": "金寨县公示表", "jinzhai_survey_info": "金寨县调查信息表", "dkdc": "承包地块调查表", "hzzz": "户主代表声明书", "yhzd": "一户一档封面", "yushe": "榆社县摸底调查表", "yushe_gsb": "榆社县公示表", "yushe_yhzd": "榆社县一户一档材料", "fbfdc": "发包方调查表", "yhqd": "一户一档清单", "yjjsqd": "移交技术资料清单", "tsqt": "特殊群体统计表"}.get(self.current_function, "")
         logger.info(f"已启动生成{function_name}线程")
 
     def update_progress(self, message):
@@ -848,7 +880,7 @@ class MainWindow(QMainWindow):
         logger.info(f"进度更新: {message}")
 
     def process_finished(self, success, message):
-        function_name = {"gsb": "公示表", "mdb": "摸底调查表", "jinzhai": "金寨县摸底调查表", "jinzhai_gsb": "金寨县公示表", "jinzhai_survey_info": "金寨县调查信息表", "dkdc": "承包地块调查表", "hzzz": "户主代表声明书", "yhzd": "一户一档封面", "yushe": "榆社县摸底调查表", "yushe_gsb": "榆社县公示表", "fbfdc": "发包方调查表", "yhqd": "一户一档清单", "yjjsqd": "移交技术资料清单", "tsqt": "特殊群体统计表"}.get(self.current_function, "")
+        function_name = {"gsb": "公示表", "mdb": "摸底调查表", "jinzhai": "金寨县摸底调查表", "jinzhai_gsb": "金寨县公示表", "jinzhai_survey_info": "金寨县调查信息表", "dkdc": "承包地块调查表", "hzzz": "户主代表声明书", "yhzd": "一户一档封面", "yushe": "榆社县摸底调查表", "yushe_gsb": "榆社县公示表", "yushe_yhzd": "榆社县一户一档材料", "fbfdc": "发包方调查表", "yhqd": "一户一档清单", "yjjsqd": "移交技术资料清单", "tsqt": "特殊群体统计表"}.get(self.current_function, "")
         if success:
             QMessageBox.information(self, "处理完成", message)
             self.status_label.setText("处理完成")
@@ -932,6 +964,13 @@ class MainWindow(QMainWindow):
             self.jtjjzz_input.hide()
             self.generate_button.setText("生成公示表_榆社县")
             self.status_label.setText("就绪，请填写信息后点击生成公示表_榆社县按钮")
+            self.org_group.hide()
+        elif button == self.generate_yushe_yhzd_radio:
+            self.current_function = "yushe_yhzd"
+            self.jtjjzz_input.setEnabled(False)
+            self.jtjjzz_input.hide()
+            self.generate_button.setText("生成一户一档材料_榆社县")
+            self.status_label.setText("就绪，请填写信息后点击生成一户一档材料_榆社县按钮")
             self.org_group.hide()
         elif button == self.generate_fbfdc_radio:
             self.current_function = "fbfdc"

@@ -4,72 +4,85 @@ from datetime import datetime
 import sys
 from PyQt5.QtCore import pyqtSignal, QObject
 
+
 class LoggerSignals(QObject):
     """用于在GUI中显示日志的信号类"""
-    log_message = pyqtSignal(str, str)  # 日志级别，日志消息
+    log_message = pyqtSignal(str, str)  # 日志级别，格式化后的日志消息
+
+
+class GUILogHandler(logging.Handler):
+    """
+    全局GUI日志处理器，挂载在根记录器上，
+    能够捕获主线程及各子线程（GSB_GUI、GenerateGSB 等）的所有日志并安全发射 Qt 信号。
+    """
+    def __init__(self):
+        super().__init__()
+        self.signals = LoggerSignals()
+        self.setLevel(logging.INFO)  # GUI 默认显示 INFO 及以上级别的日志
+        self.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S'))
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.signals.log_message.emit(record.levelname, msg)
+        except Exception:
+            self.handleError(record)
+
+
+_global_gui_handler = None
+
+
+def get_gui_log_handler():
+    """获取全局GUI日志处理器单例，并自动挂载到根记录器"""
+    global _global_gui_handler
+    if _global_gui_handler is None:
+        _global_gui_handler = GUILogHandler()
+        root_logger = logging.getLogger()
+        if root_logger.level > logging.INFO:
+            root_logger.setLevel(logging.INFO)
+        if _global_gui_handler not in root_logger.handlers:
+            root_logger.addHandler(_global_gui_handler)
+    return _global_gui_handler
+
 
 class GUILogger(logging.Logger):
-    """扩展标准Logger类，增加GUI集成功能"""
-    
+    """扩展标准Logger类（保持兼容旧代码）"""
     def __init__(self, name, level=logging.NOTSET):
         super().__init__(name, level)
-        self.signals = LoggerSignals()
-        self._setup_handlers()
-    
-    def _setup_handlers(self):
-        """设置日志处理器"""
-        # 创建logs文件夹，如果不存在
-        logs_dir = "logs"
-        if not os.path.exists(logs_dir):
-            os.makedirs(logs_dir)
-        
-        # 生成日志文件名，基于当前时间
-        log_filename = os.path.join(logs_dir, f"gsb_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
-        
-        # 创建文件处理器
-        file_handler = logging.FileHandler(log_filename, encoding='utf-8')
-        file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        file_handler.setFormatter(file_formatter)
-        
-        # 创建控制台处理器
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_formatter = logging.Formatter('%(levelname)s: %(message)s')
-        console_handler.setFormatter(console_formatter)
-        
-        # 添加处理器
-        self.addHandler(file_handler)
-        self.addHandler(console_handler)
-        
-        # 创建自定义处理器，发送信号到GUI
-        self.addHandler(self._create_signal_handler())
-    
-    def _create_signal_handler(self):
-        """创建发送信号到GUI的处理器"""
-        class SignalHandler(logging.Handler):
-            def __init__(self, signals):
-                super().__init__()
-                self.signals = signals
-            
-            def emit(self, record):
-                try:
-                    level = record.levelname
-                    msg = self.format(record)
-                    self.signals.log_message.emit(level, msg)
-                except Exception:
-                    self.handleError(record)
-        
-        handler = SignalHandler(self.signals)
-        handler.setLevel(logging.INFO)  # 只发送INFO及以上级别的日志到GUI
-        handler.setFormatter(logging.Formatter('%(message)s'))
-        return handler
+        self.signals = get_gui_log_handler().signals
+
 
 def setup_logger(name="GSB"):
-    """设置并返回日志记录器"""
+    """设置并返回日志记录器，同时确保全局GUI日志处理器已正确挂载"""
+    gui_handler = get_gui_log_handler()
+
     # 注册自定义日志类
     logging.setLoggerClass(GUILogger)
-    
+
     # 获取日志记录器
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
-    
+    logger.signals = gui_handler.signals
+
+    # 设置文件与控制台日志输出（如果尚未配置）
+    logs_dir = "logs"
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+
+    all_handlers = logger.handlers + logging.getLogger().handlers
+    has_file = any(isinstance(h, logging.FileHandler) for h in all_handlers)
+    if not has_file:
+        log_filename = os.path.join(logs_dir, f"gsb_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+        file_handler = logging.FileHandler(log_filename, encoding='utf-8')
+        file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
+
+    has_console = any(isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler) for h in all_handlers)
+    if not has_console:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_formatter = logging.Formatter('%(levelname)s: %(message)s')
+        console_handler.setFormatter(console_formatter)
+        logger.addHandler(console_handler)
+
     return logger 

@@ -5580,6 +5580,126 @@ def chain_parcel_boundary(sub_lines, dkbm):
     return ordered_lines, ordered_pts
 
 
+def compute_1_2000_tfh_square(geom, crs=None):
+    """
+    根据 NY/T 2537 正方形分幅规则计算地块相交的所有 1:2000 图幅号。
+    - 幅面规格：50cm×50cm，即地面实地 1km×1km 网格。
+    - 图幅编号：按图廓西南角平面坐标公里数编制，X（北坐标/纵坐标）在前，Y（东坐标/横坐标）在后，中间用短横线连接，精确到 0.1km（例如 4125.0-403.0）。
+    - 跨多个图幅：列出全部与地块重叠面积大于0的相交图幅号，按 X 从大到小（北到南）、Y 从小到大（西到东）排序，使用全角分号'；'分隔。
+    """
+    import math
+    from shapely.geometry import box
+
+    if geom is None or geom.is_empty:
+        return ''
+
+    # 若传入 CRS 且为地理坐标系（经纬度），正方形分幅无法直接按米/公里计算
+    if crs is not None and getattr(crs, 'is_geographic', False):
+        logger.warning(f"矢量地块坐标系为地理坐标系({crs})，无法直接计算1:2000正方形分幅图幅号")
+        return ''
+
+    minx, miny, maxx, maxy = geom.bounds
+
+    # 1:2000 比例尺正方形分幅实地边长为 1000m
+    sheet_size = 1000.0
+
+    i_start = int(math.floor(miny / sheet_size))
+    i_end = int(math.floor(maxy / sheet_size))
+    j_start = int(math.floor(minx / sheet_size))
+    j_end = int(math.floor(maxx / sheet_size))
+
+    sheet_cells = []
+    for i in range(i_start, i_end + 1):
+        for j in range(j_start, j_end + 1):
+            cell_poly = box(j * sheet_size, i * sheet_size, (j + 1) * sheet_size, (i + 1) * sheet_size)
+            try:
+                inter = geom.intersection(cell_poly)
+                # 仅保留真正有面积重叠的图幅，排除仅点线接触
+                if not inter.is_empty and getattr(inter, 'area', 0) > 1e-9:
+                    sheet_cells.append((i, j))
+            except Exception:
+                pass
+
+    if not sheet_cells:
+        # 容错：若点或极端狭窄要素相交面积为0，取中心点所在图幅
+        try:
+            c = geom.centroid
+            sheet_cells.append((int(math.floor(c.y / sheet_size)), int(math.floor(c.x / sheet_size))))
+        except Exception:
+            return ''
+
+    # 排序：X（北坐标 i）从北到南（大到小）、Y（东坐标 j）从西到东（小到大）
+    sheet_cells.sort(key=lambda item: (-item[0], item[1]))
+
+    # 去重保留顺序
+    seen = set()
+    unique_cells = []
+    for cell in sheet_cells:
+        if cell not in seen:
+            seen.add(cell)
+            unique_cells.append(cell)
+
+    # 格式化为 X.0-Y.0（西南角公里数，保留1位小数）
+    labels = [f"{i * sheet_size / 1000.0:.1f}-{j * sheet_size / 1000.0:.1f}" for i, j in unique_cells]
+    return '；'.join(labels)
+
+
+def _parse_time_value(val):
+    """
+    规范化时间表单元格值；若为0、空值、非法格式或超出正常年份范围（1900-2100）一律返回 None。
+    支持 datetime.date, datetime.datetime, pd.Timestamp, 标准日期字符串，
+    以及处于合理区间（20000~80000，约1954~2119年）的 Excel 浮点/整数日期序列号。
+    """
+    import numbers
+    import datetime
+
+    if val is None or isinstance(val, bool):
+        return None
+    if isinstance(val, float) and (pd.isna(val) or val in (float('inf'), float('-inf'))):
+        return None
+
+    dt = None
+    if isinstance(val, str):
+        s = val.strip()
+        if not s or s in ('/', 'NaT', 'None', 'nan', '-', '--'):
+            return None
+        try:
+            dt = pd.to_datetime(s, errors='coerce')
+        except Exception:
+            return None
+    elif isinstance(val, numbers.Real):
+        num = float(val)
+        if num != num or num in (float('inf'), float('-inf')) or num <= 0:
+            return None
+        # Excel 日期序列号合理区间（约 1954-10-03 至 2119-01-05）
+        if not (20000 <= num <= 80000):
+            return None
+        try:
+            dt = pd.to_datetime(num, unit='D', origin='1899-12-30')
+        except Exception:
+            return None
+    elif isinstance(val, (datetime.datetime, datetime.date, pd.Timestamp)):
+        dt = val
+    else:
+        try:
+            dt = pd.to_datetime(val, errors='coerce')
+        except Exception:
+            return None
+
+    if dt is None or pd.isna(dt):
+        return None
+
+    try:
+        year = dt.year
+    except Exception:
+        return None
+
+    if year < 1900 or year > 2100:
+        return None
+
+    return dt
+
+
 def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_directory):
     """
     榆社县一户一档材料生成功能
@@ -5664,15 +5784,7 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
 
                 def get_dt_from_cell(col_idx):
                     val = ws_time.cell(r, col_idx).value
-                    if val is None or str(val).strip() in ('', '/', 'NaT', 'None'):
-                        return None
-                    if hasattr(val, 'strftime'):
-                        return val
-                    try:
-                        dt = pd.to_datetime(val)
-                        return dt if pd.notna(dt) else None
-                    except Exception:
-                        return None
+                    return _parse_time_value(val)
 
                 yushe_time_dict[code_str] = {
                     'fbf_dc_dt': get_dt_from_cell(5),
@@ -5700,16 +5812,8 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
         logger.info(f"一户一档材料时间表不存在: {time_table_path}，将不进行任何日期写入操作")
 
     def format_date_str(dt):
-        if dt is None:
-            return ''
-        if hasattr(dt, 'strftime'):
-            return dt.strftime('%Y年%m月%d日')
-        if pd.notna(dt) and str(dt).strip() != '':
-            try:
-                return pd.to_datetime(dt).strftime('%Y年%m月%d日')
-            except Exception:
-                pass
-        return ''
+        parsed = _parse_time_value(dt)
+        return parsed.strftime('%Y年%m月%d日') if parsed is not None else ''
 
     def get_fbf_time_info(fbfbm_code):
         if not fbfbm_code or not yushe_time_dict:
@@ -5764,6 +5868,8 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
 
         # 读取矢量数据属性（四至等信息）以及 JZD / JZX
         merged_land_df = pd.DataFrame()
+        vector_geom_by_dkbm = {}
+        vector_crs = None
         jzd_df = gpd.GeoDataFrame()
         jzx_df = gpd.GeoDataFrame()
         if shp_file_path and os.path.exists(shp_file_path):
@@ -5773,6 +5879,20 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 for shp_file in shp_files_with_dk:
                     vdata = read_shp_safe(shp_file)
                     all_vector_data = pd.concat([all_vector_data, vdata], ignore_index=True)
+                if not all_vector_data.empty:
+                    vector_crs = getattr(all_vector_data, 'crs', None)
+                    for _, vrow in all_vector_data.iterrows():
+                        v_dkbm = str(vrow.get('DKBM', '')).strip()
+                        v_geom = getattr(vrow, 'geometry', None)
+                        if v_dkbm and v_geom is not None and not getattr(v_geom, 'is_empty', True):
+                            if v_dkbm in vector_geom_by_dkbm:
+                                try:
+                                    vector_geom_by_dkbm[v_dkbm] = vector_geom_by_dkbm[v_dkbm].union(v_geom)
+                                except Exception:
+                                    pass
+                            else:
+                                vector_geom_by_dkbm[v_dkbm] = v_geom
+
                 if not cbdkxx_df.empty and not all_vector_data.empty:
                     merged_land_df = pd.merge(cbdkxx_df, all_vector_data.drop(columns=['geometry'], errors='ignore'), on='DKBM', how='left')
                 elif not cbdkxx_df.empty:
@@ -6135,9 +6255,39 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
             members = jtcy_df[jtcy_df['CBFBM'] == cbfbm].copy()
             cbfcysl = len(members)
 
+            # 生成该户的调查/公示记事内容（供核实表与归户表共用）
+            cbf_stat = cbf_stat_dict.get(cbfbm)
+            if cbf_stat:
+                y_cbf = str(cbf_stat.get('原承包方', '')).strip() if pd.notna(cbf_stat.get('原承包方')) else ''
+                x_cbf = str(cbf_stat.get('现二轮延包承包方', '')).strip() if pd.notna(cbf_stat.get('现二轮延包承包方')) else cbfmc
+                is_new_cbf = (not y_cbf) or (y_cbf in ('/', '无', '新增', 'nan', 'None'))
+                y_mj_str = format_stat_num(cbf_stat.get('原承包土地面积（亩）'))
+                y_ks_str = format_stat_num(cbf_stat.get('原承包土地地块数'))
+                x_mj_str = format_stat_num(cbf_stat.get('延包土地面积（亩）'))
+                x_ks_str = format_stat_num(cbf_stat.get('延包土地地块数'))
+
+                if is_new_cbf:
+                    cbfdcjs_hs = (
+                        f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{x_cbf}。"
+                        f"2、延包土地{x_mj_str}亩，{x_ks_str}块。"
+                    )
+                else:
+                    cbfdcjs_hs = (
+                        f"1、原承包方为{y_cbf}，现二轮延包承包方为{x_cbf}。"
+                        f"2、原承包土地{y_mj_str}亩，{y_ks_str}块；延包土地{x_mj_str}亩，{x_ks_str}块。"
+                    )
+            else:
+                cbfdcjs_hs = f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{cbfmc}。"
+
             # 打开核实表模版
             wb_hs = openpyxl.load_workbook(hs_tpl_path)
             ws_hs = wb_hs.active
+
+            # 锁定全表模板行高（未显式设行高的行赋默认行高17.5pt），确保保存时保留 customHeight="1"，避免 Excel AutoFit 跑版
+            default_h_hs = ws_hs.sheet_format.defaultRowHeight or 17.5
+            for r in range(1, ws_hs.max_row + 1):
+                if ws_hs.row_dimensions[r].height is None:
+                    ws_hs.row_dimensions[r].height = default_h_hs
 
             # 填充基本信息单元格
             ws_hs['E3'].value = fbfmc
@@ -6251,7 +6401,7 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
 
             # 承包地块情况
             page1_start = cy_endrow + 1
-            page_len = 42
+            page_len = 38
 
             rel_merges = []
             for mr in ws_hs.merged_cells.ranges:
@@ -6260,9 +6410,9 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
 
             cbf_lands = merged_land_df[merged_land_df['CBFBM'] == cbfbm].sort_values('DKBM') if not merged_land_df.empty else pd.DataFrame()
             num_parcels = len(cbf_lands)
-            extra_pages = (num_parcels - 1) // 9 if num_parcels > 0 else 0
+            extra_pages = (num_parcels - 1) // 8 if num_parcels > 0 else 0
 
-            # 如果[CBDKZS]>9，增加整页“承包地块情况”行
+            # 如果[CBDKZS]>8，增加整页“承包地块情况”行
             for ep in range(extra_pages):
                 insert_pos = page1_start + page_len * (ep + 1)
                 insert_rows_with_merges(ws_hs, insert_pos, page_len)
@@ -6296,16 +6446,16 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
 
             total_pages = 1 + extra_pages
             for p in range(total_pages):
-                p_sum_row = page1_start + p * 42 + 1
+                p_sum_row = page1_start + p * page_len + 1
                 ws_hs.cell(p_sum_row, 2).value = str(cbdkzs)
                 ws_hs.cell(p_sum_row, 7).value = f"{float(htzmjm):.2f}亩"
                 ws_hs.cell(p_sum_row, 14).value = f"{float(htzmjm):.2f}亩"
 
             # 填充地块槽位：每4行一个地块
             for idx, land in enumerate(cbf_lands.to_dict('records')):
-                page_num = idx // 9
-                slot_in_page = idx % 9
-                r0 = page1_start + page_num * 42 + 5 + slot_in_page * 4
+                page_num = idx // 8
+                slot_in_page = idx % 8
+                r0 = page1_start + page_num * page_len + 5 + slot_in_page * 4
 
                 dkbm_val = str(land.get('DKBM', '')).strip()
                 dkbm_last5 = dkbm_val[-5:] if len(dkbm_val) >= 5 else dkbm_val
@@ -6346,35 +6496,12 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
 
             # 填充“非承包地块情况”页的调查记事
             jishi_row = None
-            for r in range(page1_start + total_pages * 42, ws_hs.max_row + 1):
+            for r in range(page1_start + total_pages * page_len, ws_hs.max_row + 1):
                 if ws_hs.cell(r, 1).value == '调查\n记事':
                     jishi_row = r
                     break
 
             if jishi_row is not None:
-                cbf_stat = cbf_stat_dict.get(cbfbm)
-                if cbf_stat:
-                    y_cbf = str(cbf_stat.get('原承包方', '')).strip() if pd.notna(cbf_stat.get('原承包方')) else ''
-                    x_cbf = str(cbf_stat.get('现二轮延包承包方', '')).strip() if pd.notna(cbf_stat.get('现二轮延包承包方')) else cbfmc
-                    is_new_cbf = (not y_cbf) or (y_cbf in ('/', '无', '新增', 'nan', 'None'))
-                    y_mj_str = format_stat_num(cbf_stat.get('原承包土地面积（亩）'))
-                    y_ks_str = format_stat_num(cbf_stat.get('原承包土地地块数'))
-                    x_mj_str = format_stat_num(cbf_stat.get('延包土地面积（亩）'))
-                    x_ks_str = format_stat_num(cbf_stat.get('延包土地地块数'))
-
-                    if is_new_cbf:
-                        cbfdcjs_hs = (
-                            f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{x_cbf}。"
-                            f"2、延包土地{x_mj_str}亩，{x_ks_str}块。"
-                        )
-                    else:
-                        cbfdcjs_hs = (
-                            f"1、原承包方为{y_cbf}，现二轮延包承包方为{x_cbf}。"
-                            f"2、原承包土地{y_mj_str}亩，{y_ks_str}块；延包土地{x_mj_str}亩，{x_ks_str}块。"
-                        )
-                else:
-                    cbfdcjs_hs = f"1、原承包方不存在，为分户新增承包方，现二轮延包承包方为{cbfmc}。"
-
                 ws_hs.cell(jishi_row, 2).value = cbfdcjs_hs
                 # 调查记事时间->调查记事栏的N列；调查人员时间->调查人员栏的N列；承包方（代表）时间->承包方（代表）栏的F列；审核意见时间->审核意见栏的N列
                 if time_info:
@@ -6405,6 +6532,12 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
             # -----------------------------
             wb_gh = openpyxl.load_workbook(gh_tpl_path)
             ws_gh = wb_gh.active
+
+            # 锁定全表模板行高（未显式设行高的行赋默认行高17.5pt），确保保存时保留 customHeight="1"，避免 Excel AutoFit 跑版
+            default_h_gh = ws_gh.sheet_format.defaultRowHeight or 17.5
+            for r in range(1, ws_gh.max_row + 1):
+                if ws_gh.row_dimensions[r].height is None:
+                    ws_gh.row_dimensions[r].height = default_h_gh
 
             # 填充基本信息单元格
             ws_gh['E3'].value = fbfmc
@@ -6516,7 +6649,7 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 if page1_start_gh <= mr.min_row <= page1_start_gh + page_len - 1 and page1_start_gh <= mr.max_row <= page1_start_gh + page_len - 1:
                     rel_merges_gh.append((mr.min_col, mr.min_row - page1_start_gh, mr.max_col, mr.max_row - page1_start_gh))
 
-            # 如果[CBDKZS]>9，增加整页“承包地块情况”行
+            # 如果[CBDKZS]>8，增加整页“承包地块情况”行
             for ep in range(extra_pages):
                 insert_pos = page1_start_gh + page_len * (ep + 1)
                 insert_rows_with_merges(ws_gh, insert_pos, page_len)
@@ -6534,23 +6667,23 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                             tgt_cell.number_format = src_cell.number_format
                             tgt_cell.protection = copy.copy(src_cell.protection)
                             tgt_cell.alignment = copy.copy(src_cell.alignment)
-                        if i in [0, 1, 2, 3, 4] or src_cell.value in ['东：', '南：', '西：', '北：']:
+                        if i in range(6) or src_cell.value in ['东：', '南：', '西：', '北：']:
                             tgt_cell.value = src_cell.value
                 for min_col, min_r, max_col, max_r in rel_merges_gh:
                     ws_gh.merge_cells(start_row=insert_pos + min_r, start_column=min_col, end_row=insert_pos + max_r, end_column=max_col)
 
             # 地块汇总：B{cy_endrow_gh+3}：地块数量；H{cy_endrow_gh+3}：合同总面积亩；O{cy_endrow_gh+3}：实测总面积亩
             for p in range(total_pages):
-                p_sum_row = page1_start_gh + p * 42 + 2
+                p_sum_row = page1_start_gh + p * page_len + 2
                 ws_gh.cell(p_sum_row, 2).value = str(cbdkzs)
                 ws_gh.cell(p_sum_row, 8).value = f"{float(htzmjm):.2f}亩"
                 ws_gh.cell(p_sum_row, 15).value = f"{float(htzmjm):.2f}亩"
 
             # 填充地块槽位：每4行一个地块 (归户表)
             for idx, land in enumerate(cbf_lands.to_dict('records')):
-                page_num = idx // 9
-                slot_in_page = idx % 9
-                r0 = page1_start_gh + page_num * 42 + 6 + slot_in_page * 4
+                page_num = idx // 8
+                slot_in_page = idx % 8
+                r0 = page1_start_gh + page_num * page_len + 6 + slot_in_page * 4
 
                 dkbm_val = str(land.get('DKBM', '')).strip()
                 dkbm_last5 = dkbm_val[-5:] if len(dkbm_val) >= 5 else dkbm_val
@@ -6590,7 +6723,7 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
 
             # 填充“非承包地块情况”页的公示记事
             jishi_row_gh = None
-            for r in range(page1_start_gh + total_pages * 42, ws_gh.max_row + 1):
+            for r in range(page1_start_gh + total_pages * page_len, ws_gh.max_row + 1):
                 val_1 = ws_gh.cell(r, 1).value
                 if val_1 and '记事' in str(val_1):
                     jishi_row_gh = r
@@ -6737,7 +6870,7 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                             if '组农村耕地' in r.text:
                                 r.text = r.text.replace('组农村耕地', '农村耕地')
 
-                # 替换承包期限（从CBHT获取正确的起止年月日）
+                # 替换承包期限（使用书签替换：Qyyyy, Qmm, Qdd, Zyyyy, Zmm, Zdd）
                 q_y = ht_info.get('Q_Y', '2024')
                 q_m = ht_info.get('Q_M', '01')
                 q_d = ht_info.get('Q_D', '01')
@@ -6745,17 +6878,12 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 z_m = ht_info.get('Z_M', '12')
                 z_d = ht_info.get('Z_D', '31')
 
-                for p in doc_sq.paragraphs:
-                    if '承包期限为' in p.text:
-                        for i, r in enumerate(p.runs):
-                            if '承包期限为' in r.text and i + 11 < len(p.runs):
-                                p.runs[i + 1].text = q_y
-                                p.runs[i + 3].text = q_m
-                                p.runs[i + 5].text = q_d
-                                p.runs[i + 7].text = f" {z_y} "
-                                p.runs[i + 9].text = z_m
-                                p.runs[i + 11].text = z_d
-                                break
+                replace_bookmark_in_doc(doc_sq, 'Qyyyy', q_y)
+                replace_bookmark_in_doc(doc_sq, 'Qmm', q_m)
+                replace_bookmark_in_doc(doc_sq, 'Qdd', q_d)
+                replace_bookmark_in_doc(doc_sq, 'Zyyyy', z_y)
+                replace_bookmark_in_doc(doc_sq, 'Zmm', z_m)
+                replace_bookmark_in_doc(doc_sq, 'Zdd', z_d)
 
                 # 填写家庭承包申请书时间（替换书签 RQ->XXXX年XX月XX日）
                 if time_info and time_info.get('sq_dt'):
@@ -6874,6 +7002,14 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                     # 基本信息
                     ws_dk['D1'].value = fbfbm
                     ws_dk['O1'].value = cbfmc
+                    tfh_raw = land_item.get('TFH')
+                    if tfh_raw is None or pd.isna(tfh_raw) or str(tfh_raw).strip() in ('', 'nan', 'None'):
+                        # 矢量地块数据中不存在TFH或为空，自动按NY/T 2537计算该地块所在1:2000正方形分幅图幅号
+                        geom = vector_geom_by_dkbm.get(dkbm_item)
+                        tfh_text = compute_1_2000_tfh_square(geom, vector_crs) if geom is not None else ''
+                    else:
+                        tfh_text = str(tfh_raw).strip()
+                    ws_dk['V1'].value = tfh_text
                     ws_dk['C5'].value = dkbm_last5
                     ws_dk['M5'].value = dkmc_item
                     ws_dk['W5'].value = htmjm_str

@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                             QLabel, QLineEdit, QPushButton, QFileDialog, QMessageBox, QGroupBox,
                             QTextEdit, QScrollArea, QSplitter, QRadioButton, QButtonGroup, QTabWidget)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtGui import QFont, QColor, QTextCursor
 from GenerateGSB import generate_gsb, generate_mdb_tables_only, generate_jinzhai_mdb_tables_only, generate_dkdc_tables_only, generate_hzzz_sms_only, generate_yhzd_cover_only, generate_jinzhai_gsb_only, generate_yushe_mdb_tables_only, generate_yushe_gsb_only, generate_fbfdc_table_only, generate_yhqd_table_only, generate_yjjsqd_table_only, generate_tsqt_statistics, generate_tsqt_statistics_xlsx, generate_jinzhai_survey_info_tables_only, generate_yushe_yhzd_materials_only
 from logger_util import setup_logger
 
@@ -382,13 +382,13 @@ class LogDisplay(QTextEdit):
         }
     
     def append_log(self, level, message):
-        """添加带颜色的日志消息"""
+        """添加带颜色的日志消息并自动滚动到底部"""
         color = self.log_colors.get(level, QColor(0, 0, 0))
         self.setTextColor(color)
-        self.append(f"{message}")
+        self.append(str(message))
         # 滚动到底部
-        scrollbar = self.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        self.moveCursor(QTextCursor.End)
+        self.ensureCursorVisible()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -397,9 +397,10 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1000, 700)  # 增加最小尺寸
         self.resize(1000, 700)  # 设置初始尺寸
         
-        # 连接日志信号
-        if hasattr(logger, 'signals'):
-            logger.signals.log_message.connect(self.display_log)
+        # 连接全局日志信号（捕获主界面及后台各工作线程的所有日志）
+        from logger_util import get_gui_log_handler
+        self.gui_log_handler = get_gui_log_handler()
+        self.gui_log_handler.signals.log_message.connect(self.display_log)
         
         self.initUI()
 

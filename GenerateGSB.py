@@ -5580,6 +5580,310 @@ def chain_parcel_boundary(sub_lines, dkbm):
     return ordered_lines, ordered_pts
 
 
+def _normalize_point_id(value):
+    """统一 JZDH 类型，避免 int/float/字符串混用导致端点无法匹配。"""
+    if value is None:
+        return ''
+    try:
+        if pd.isna(value):
+            return ''
+    except (TypeError, ValueError):
+        pass
+
+    text = str(value).strip()
+    if text.lower() in ('nan', 'none', '<na>'):
+        return ''
+    if text.endswith('.0') and text[:-2].lstrip('-').isdigit():
+        text = text[:-2]
+    return text
+
+
+def format_jzxsm_continuous(orig_sm, start_num, end_num, direction_text=None):
+    """
+    规范化界址线说明，保证起点和终点为连续的 T1-T2, T2-T3...Tn-T1。
+    原始说明中已有的 T 标号会被剥离，只保留界址线描述正文。
+    """
+    import re
+
+    try:
+        is_empty = orig_sm is None or pd.isna(orig_sm)
+    except (TypeError, ValueError):
+        is_empty = orig_sm is None
+    orig = '' if is_empty else str(orig_sm).strip()
+    if not orig or orig.lower() in ('nan', 'none', '<na>'):
+        return f'由T{start_num}至T{end_num}'
+
+    middle = re.sub(r'^(?:由)?T\d+', '', orig).strip()
+    middle = re.sub(r'(?:至|到)T?\d+.*$', '', middle).strip()
+    middle = re.sub(r'^由', '', middle).strip()
+    if not middle:
+        return f'由T{start_num}至T{end_num}'
+    if direction_text:
+        middle = re.sub(
+            r'(东北|东南|西北|西南|东|南|西|北)方向',
+            f'{direction_text}方向',
+            middle,
+            count=1,
+        )
+    return f'由T{start_num}{middle}至T{end_num}'
+
+
+def _trace_boundary_ring(edges):
+    """按端点连接顺序追踪一个完整闭环，返回线序和点序。"""
+    if len(edges) < 3:
+        return None
+
+    start_pt = edges[0][1]
+    points = [start_pt]
+    ordered_lines = []
+    used_indices = set()
+    curr_pt = start_pt
+
+    for _ in range(len(edges)):
+        candidates = []
+        for idx, (line, q_pt, z_pt) in enumerate(edges):
+            if idx in used_indices:
+                continue
+            if q_pt == curr_pt:
+                candidates.append((idx, line, z_pt))
+            elif z_pt == curr_pt:
+                candidates.append((idx, line, q_pt))
+
+        if not candidates:
+            return None
+
+        # 优先走向尚未访问的点，避免在分支处提前闭合。
+        candidates.sort(key=lambda item: (item[2] in points[1:], item[0]))
+        idx, line, next_pt = candidates[0]
+        used_indices.add(idx)
+        ordered_lines.append(line)
+        points.append(next_pt)
+        curr_pt = next_pt
+
+    if curr_pt != start_pt or len(used_indices) != len(edges):
+        return None
+    return ordered_lines, points[:-1]
+
+
+def _build_boundary_ring(sub_lines):
+    """只依据 JZX 端点构建闭环，不依赖 JZXSM 中的原始 T1。"""
+    import re
+
+    records = sub_lines.to_dict('records')
+    valid_edges = []
+    seen_endpoint_pairs = set()
+    for line in records:
+        q_pt = _normalize_point_id(line.get('QJZDH'))
+        z_pt = _normalize_point_id(line.get('ZJZDH'))
+        if not q_pt or not z_pt or q_pt == z_pt:
+            continue
+        pair_key = tuple(sorted((q_pt, z_pt)))
+        if pair_key in seen_endpoint_pairs:
+            continue
+        seen_endpoint_pairs.add(pair_key)
+        valid_edges.append((line, q_pt, z_pt))
+
+    if len(valid_edges) < 3:
+        return None
+
+    t_edges = [
+        edge for edge in valid_edges
+        if re.search(r'[由至到]T\d+|T\d+沿', str(edge[0].get('JZXSM', '')))
+    ]
+    candidate_edge_sets = []
+    if len(t_edges) >= 3:
+        candidate_edge_sets.append(t_edges)
+    candidate_edge_sets.append(valid_edges)
+
+    for edge_set in candidate_edge_sets:
+        ring = _trace_boundary_ring(edge_set)
+        if ring is not None:
+            return ring
+    return None
+
+
+def _get_dk_outer_coords(geom):
+    """取 DK 几何最外层环坐标，MultiPolygon 时使用面积最大的面。"""
+    if geom is None or getattr(geom, 'is_empty', True):
+        return None
+    try:
+        if geom.geom_type == 'Polygon':
+            poly = geom
+        elif geom.geom_type == 'MultiPolygon':
+            poly = max(geom.geoms, key=lambda item: item.area)
+        else:
+            return None
+        coords = list(poly.exterior.coords)
+        return coords[:-1] if len(coords) > 1 else coords
+    except Exception:
+        return None
+
+
+def _build_jzd_point_coords(jzd_df):
+    """构建 JZDH 到 (X, Y) 的坐标字典，优先使用 JZD 点几何。"""
+    point_coords = {}
+    if jzd_df is None or jzd_df.empty or 'JZDH' not in jzd_df.columns:
+        return point_coords
+
+    for _, row in jzd_df.iterrows():
+        pt_id = _normalize_point_id(row.get('JZDH'))
+        if not pt_id:
+            continue
+
+        geom = row.get('geometry')
+        try:
+            if geom is not None and not geom.is_empty:
+                if geom.geom_type == 'Point':
+                    point_coords[pt_id] = (float(geom.x), float(geom.y))
+                elif geom.geom_type == 'MultiPoint' and len(geom.geoms) > 0:
+                    point = geom.geoms[0]
+                    point_coords[pt_id] = (float(point.x), float(point.y))
+        except Exception:
+            pass
+
+        if pt_id in point_coords:
+            continue
+        # 部分 JZD 图层没有 .prj 或几何为空，使用属性中的 XZBZ/YZBZ 回退。
+        try:
+            x_val = row.get('YZBZ')
+            y_val = row.get('XZBZ')
+            if pd.notna(x_val) and pd.notna(y_val):
+                point_coords[pt_id] = (float(x_val), float(y_val))
+        except (TypeError, ValueError):
+            pass
+    return point_coords
+
+
+def _add_jzx_endpoint_coords(point_coords, sub_lines):
+    """JZD 缺失时用 JZX 线端点补充点坐标，不覆盖已有 JZD 坐标。"""
+    for line in sub_lines.to_dict('records'):
+        q_pt = _normalize_point_id(line.get('QJZDH'))
+        z_pt = _normalize_point_id(line.get('ZJZDH'))
+        geom = line.get('geometry')
+        if not q_pt or not z_pt or geom is None or getattr(geom, 'is_empty', True):
+            continue
+        try:
+            if geom.geom_type == 'LineString':
+                q_coord = geom.coords[0]
+                z_coord = geom.coords[-1]
+            elif geom.geom_type == 'MultiLineString' and len(geom.geoms) > 0:
+                first_line = geom.geoms[0]
+                q_coord = first_line.coords[0]
+                z_coord = first_line.coords[-1]
+            else:
+                continue
+            if q_pt not in point_coords:
+                point_coords[q_pt] = (float(q_coord[0]), float(q_coord[1]))
+            if z_pt not in point_coords:
+                point_coords[z_pt] = (float(z_coord[0]), float(z_coord[1]))
+        except Exception:
+            continue
+
+
+def _find_northwest_index(ordered_pts, point_coords, dk_geom):
+    """在实际界址点中选择距离 DK 外接框西北角最近的顶点。"""
+    if not ordered_pts:
+        return None
+
+    outer_coords = _get_dk_outer_coords(dk_geom)
+    if outer_coords:
+        nw_x = min(float(p[0]) for p in outer_coords)
+        nw_y = max(float(p[1]) for p in outer_coords)
+    else:
+        valid_coords = [
+            point_coords.get(pt_id) for pt_id in ordered_pts
+            if point_coords.get(pt_id) is not None
+        ]
+        if not valid_coords:
+            return None
+        nw_x = min(float(p[0]) for p in valid_coords)
+        nw_y = max(float(p[1]) for p in valid_coords)
+
+    best_idx = None
+    best_key = None
+    for idx, pt_id in enumerate(ordered_pts):
+        coord = point_coords.get(pt_id)
+        if coord is None:
+            continue
+        x_val, y_val = float(coord[0]), float(coord[1])
+        dist2 = (x_val - nw_x) ** 2 + (y_val - nw_y) ** 2
+        key = (dist2, -y_val, x_val, str(pt_id))
+        if best_key is None or key < best_key:
+            best_key = key
+            best_idx = idx
+    return best_idx
+
+
+def _direction_between_points(start_pt_id, end_pt_id, point_coords):
+    """根据新起点和新终点计算八方向文本。"""
+    import math
+
+    start_coord = point_coords.get(_normalize_point_id(start_pt_id))
+    end_coord = point_coords.get(_normalize_point_id(end_pt_id))
+    if start_coord is None or end_coord is None:
+        return ''
+
+    dx = float(end_coord[0]) - float(start_coord[0])
+    dy = float(end_coord[1]) - float(start_coord[1])
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return ''
+
+    directions = ['东', '东北', '北', '西北', '西', '西南', '南', '东南']
+    angle = math.degrees(math.atan2(dy, dx))
+    return directions[int(round(angle / 45.0)) % 8]
+
+
+def _orient_boundary_clockwise(ordered_lines, ordered_pts, point_coords, dk_geom, dkbm):
+    """将闭环旋转到西北角起点，并统一为顺时针方向。"""
+    if len(ordered_lines) != len(ordered_pts) or len(ordered_pts) < 3:
+        return ordered_lines, ordered_pts
+
+    nw_idx = _find_northwest_index(ordered_pts, point_coords, dk_geom)
+    if nw_idx is None:
+        logger.warning(f"{dkbm} 无法确定西北角界址点，保留拓扑闭环顺序")
+        return ordered_lines, ordered_pts
+
+    if nw_idx:
+        ordered_pts = ordered_pts[nw_idx:] + ordered_pts[:nw_idx]
+        ordered_lines = ordered_lines[nw_idx:] + ordered_lines[:nw_idx]
+
+    ring_coords = [point_coords.get(pt_id) for pt_id in ordered_pts]
+    if any(coord is None for coord in ring_coords):
+        logger.warning(f"{dkbm} 界址点坐标不完整，无法判断顺时针方向，保留闭环顺序")
+        return ordered_lines, ordered_pts
+
+    area2 = 0.0
+    for idx, coord in enumerate(ring_coords):
+        next_coord = ring_coords[(idx + 1) % len(ring_coords)]
+        area2 += float(coord[0]) * float(next_coord[1]) - float(next_coord[0]) * float(coord[1])
+
+    if area2 > 0:
+        # EPSG:4547 中 Y 向北，正面积表示逆时针，需反转为顺时针。
+        ordered_pts = [ordered_pts[0]] + list(reversed(ordered_pts[1:]))
+        ordered_lines = [ordered_lines[-1]] + list(reversed(ordered_lines[:-1]))
+    elif abs(area2) < 1e-9:
+        logger.warning(f"{dkbm} 界址点闭环面积为零，无法判断顺时针方向")
+    return ordered_lines, ordered_pts
+
+
+def order_parcel_boundary_from_northwest(sub_lines, dkbm, point_coords=None, dk_geom=None):
+    """
+    先构建不依赖原始 T1 的界址线闭环，再从西北角开始按顺时针返回线序和点序。
+    """
+    if sub_lines is None or sub_lines.empty:
+        return [], []
+
+    ring = _build_boundary_ring(sub_lines)
+    if ring is None:
+        logger.warning(f"{dkbm} 界址线无法构建完整闭环，回退原有拓扑排序")
+        return chain_parcel_boundary(sub_lines, dkbm)
+
+    ordered_lines, ordered_pts = ring
+    coords = dict(point_coords or {})
+    _add_jzx_endpoint_coords(coords, sub_lines)
+    return _orient_boundary_clockwise(ordered_lines, ordered_pts, coords, dk_geom, dkbm)
+
+
 def compute_1_2000_tfh_square(geom, crs=None):
     """
     根据 NY/T 2537 正方形分幅规则计算地块相交的所有 1:2000 图幅号。
@@ -5700,11 +6004,78 @@ def _parse_time_value(val):
     return dt
 
 
-def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_directory):
+def _select_non_current_mdb_owner(orig_val, cbfmc, mdb_cbfmc_set):
+    """
+    从非公共界址线的 PLDWQLR 中提取非本承包方名称。
+    仅保留当前 MDB 中存在对应承包地块的名称；多个名称保持原顺序并用 / 连接。
+    """
+    if orig_val is None:
+        return ''
+    try:
+        if pd.isna(orig_val):
+            return ''
+    except (TypeError, ValueError):
+        pass
+
+    text = str(orig_val).strip()
+    if '/' not in text:
+        return ''
+
+    current_name = str(cbfmc).strip() if cbfmc is not None else ''
+    selected = []
+    for token in (part.strip() for part in text.split('/')):
+        if not token or token == current_name or token in ('nan', 'None', '集体'):
+            continue
+        if token in mdb_cbfmc_set and token not in selected:
+            selected.append(token)
+    return '/'.join(selected)
+
+
+def resolve_pldwqlr(line, dkbm_item, cbfmc, fbffzrxm, single_adjacent_owner, dk_to_cbfmc, mdb_cbfmc_set):
+    """
+    解析承包地块调查表中界址线的毗邻地物权利人。
+    - 关闭单一毗邻地物权利人时，保持原始 PLDWQLR。
+    - 公共界址线优先取非本宗的邻宗承包方名称。
+    - 非公共界址线存在 / 时，取当前 MDB 中存在的非本承包方名称；否则填写发包方负责人。
+    """
+    orig_val = line.get('PLDWQLR')
+    orig_pldw = str(orig_val).strip() if pd.notna(orig_val) and str(orig_val).strip() != '' else cbfmc
+    if not single_adjacent_owner:
+        return orig_pldw
+
+    line_dkbm_str = str(line.get('DKBM', '')).strip()
+    dk_tokens = [part.strip() for part in line_dkbm_str.split('/') if part.strip()]
+    if len(dk_tokens) == 2 and dkbm_item in dk_tokens:
+        neigh_idx = 1 if dk_tokens[0] == dkbm_item else 0
+        neigh_dkbm = dk_tokens[neigh_idx]
+        raw_pldw_tokens = [part.strip() for part in str(orig_val).split('/') if part.strip()] if pd.notna(orig_val) else []
+        neigh_name = ''
+        if len(raw_pldw_tokens) == 2:
+            neigh_name = raw_pldw_tokens[neigh_idx]
+        elif len(raw_pldw_tokens) == 1:
+            neigh_name = raw_pldw_tokens[0]
+
+        if (not neigh_name or neigh_name in ('nan', 'None', '集体')) and neigh_dkbm in dk_to_cbfmc:
+            alt = dk_to_cbfmc.get(neigh_dkbm, '')
+            if alt:
+                neigh_name = alt
+
+        if neigh_name and neigh_name not in ('集体', '无', 'nan', 'None'):
+            return neigh_name
+        return fbffzrxm or '集体'
+
+    selected_name = _select_non_current_mdb_owner(orig_val, cbfmc, mdb_cbfmc_set)
+    if selected_name:
+        return selected_name
+    return fbffzrxm or orig_pldw
+
+
+def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_directory, single_adjacent_owner=True):
     """
     榆社县一户一档材料生成功能
     从MDB中读取 FBF, CBF, CBF_JTCY, CBHT 等表
     生成【发包方调查表】、【承包方调查表】、【承包经营权调查结果核实表】等一户一档材料
+    :param single_adjacent_owner: 是否开启单一毗邻地物权利人（默认True）。公共界址线取邻宗承包方名称；非公共界址线有 / 时取当前 MDB 中存在的非本承包方名称，否则填写发包方负责人。
     """
     import copy
     import re
@@ -5756,9 +6127,12 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
     if os.path.exists(cbf_stat_path):
         try:
             logger.info(f"正在加载承包方变更调查统计: {cbf_stat_path}")
-            df_cbf_stat = pd.read_excel(cbf_stat_path)
+            # 承包方编码必须按文本读取，避免 18 位编码被推断为浮点数后丢失精度
+            df_cbf_stat = pd.read_excel(cbf_stat_path, dtype=str)
             for _, r in df_cbf_stat.iterrows():
-                code = str(r['承包方编码']).strip()
+                code = str(r['承包方编码']).strip() if pd.notna(r['承包方编码']) else ''
+                if not code:
+                    continue
                 cbf_stat_dict[code] = r.to_dict()
         except Exception as e:
             logger.warning(f"读取承包方变更统计失败: {e}")
@@ -5833,6 +6207,17 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
         except Exception:
             return str(val).strip()
 
+    def normalize_stat_code(val):
+        """规范化统计表中的编码文本，避免空值和浮点尾巴影响编号输出。"""
+        if pd.isna(val):
+            return ''
+        code = str(val).strip()
+        if code in ('', '/', 'nan', 'None'):
+            return ''
+        if code.endswith('.0') and code[:-2].isdigit():
+            return code[:-2]
+        return code
+
     def clean_border_desc(text, direction_char):
         if pd.isna(text) or text is None:
             return ''
@@ -5865,6 +6250,24 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 cbdkxx_df = pd.read_sql_query('SELECT * FROM [CBDKXX]', conn)
             except Exception:
                 cbdkxx_df = pd.DataFrame()
+
+        # 构建全库 地块编码 -> 承包方名称 映射表，用于精准解析界址线邻宗承包方权利人
+        dk_to_cbfmc = {}
+        if not cbdkxx_df.empty and not cbf_df.empty and 'DKBM' in cbdkxx_df.columns and 'CBFBM' in cbdkxx_df.columns:
+            try:
+                dk_cbf_merged = pd.merge(cbdkxx_df[['DKBM', 'CBFBM']], cbf_df[['CBFBM', 'CBFMC']], on='CBFBM', how='left')
+                for _, r_map in dk_cbf_merged.iterrows():
+                    dk_code = str(r_map['DKBM']).strip()
+                    c_name = str(r_map['CBFMC']).strip() if pd.notna(r_map['CBFMC']) else ''
+                    if dk_code:
+                        dk_to_cbfmc[dk_code] = c_name
+            except Exception as e:
+                logger.warning(f"构建地块与承包方映射字典失败: {e}")
+        mdb_cbfmc_set = {
+            str(name).strip()
+            for name in dk_to_cbfmc.values()
+            if name is not None and str(name).strip()
+        }
 
         # 读取矢量数据属性（四至等信息）以及 JZD / JZX
         merged_land_df = pd.DataFrame()
@@ -6056,8 +6459,21 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
             fbfbm = cbfbm[:14] if len(cbfbm) >= 14 else ''
             # 承包方编码后4位
             cbfbm_last4 = cbfbm[-4:] if len(cbfbm) >= 4 else cbfbm
-            # 承包合同编号：CBFBM + "J"
-            cbhtbh = f"{cbfbm}J" if cbfbm else ''
+
+            # 根据承包方变更调查统计判断是否为新增承包方
+            cbf_stat = cbf_stat_dict.get(cbfbm)
+            y_cbf = normalize_stat_code(cbf_stat.get('原承包方')) if cbf_stat else ''
+            is_new_cbf = (not y_cbf) or (y_cbf in ('/', '无', '新增', 'nan', 'None'))
+
+            if is_new_cbf:
+                contract_cert_no = '/'
+            else:
+                old_cbfbm = normalize_stat_code(cbf_stat.get('承包方编码旧'))
+                if old_cbfbm:
+                    contract_cert_no = old_cbfbm if old_cbfbm.endswith('J') else f"{old_cbfbm}J"
+                else:
+                    contract_cert_no = '/'
+                    logger.warning(f"非新增承包方缺少旧编码，承包方编码: {cbfbm}")
 
             # 承包期限
             ht_info = cbht_map.get(cbfbm, {})
@@ -6081,8 +6497,18 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
             ws_cbf['D5'].value = cbfdz
             ws_cbf['M5'].value = yzbm
             ws_cbf['M7'].value = cbfzjhm
-            ws_cbf['H9'].value = cbhtbh
-            ws_cbf['H11'].value = cbhtbh
+            if is_new_cbf:
+                ws_cbf['D9'].value = '£有'
+                ws_cbf['D10'].value = 'R无'
+                ws_cbf['D11'].value = '£有'
+                ws_cbf['D12'].value = 'R无'
+            else:
+                ws_cbf['D9'].value = 'R有'
+                ws_cbf['D10'].value = '£无'
+                ws_cbf['D11'].value = 'R有'
+                ws_cbf['D12'].value = '£无'
+            ws_cbf['H9'].value = contract_cert_no
+            ws_cbf['H11'].value = contract_cert_no
             ws_cbf['D13'].value = cbqx_text
             ws_cbf['Q14'].value = str(cbfcysl)
 
@@ -6167,12 +6593,8 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 ws_cbf.cell(curr_row, 10).value = cyzjhm
 
             # 填充承包方调查记事
-            cbf_stat = cbf_stat_dict.get(cbfbm)
             if cbf_stat:
-                y_cbf = str(cbf_stat.get('原承包方', '')).strip() if pd.notna(cbf_stat.get('原承包方')) else ''
                 x_cbf = str(cbf_stat.get('现二轮延包承包方', '')).strip() if pd.notna(cbf_stat.get('现二轮延包承包方')) else cbfmc
-
-                is_new_cbf = (not y_cbf) or (y_cbf in ('/', '无', '新增', 'nan', 'None'))
 
                 y_mj_str = format_stat_num(cbf_stat.get('原承包土地面积（亩）'))
                 y_ks_str = format_stat_num(cbf_stat.get('原承包土地地块数'))
@@ -6444,12 +6866,17 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 cbdkzs = num_parcels
                 htzmjm = cbf_lands['HTMJM'].sum() if not cbf_lands.empty and 'HTMJM' in cbf_lands.columns else 0.0
 
+            if not cbf_lands.empty and 'SCMJM' in cbf_lands.columns:
+                scmjm_sum = float(pd.to_numeric(cbf_lands['SCMJM'], errors='coerce').fillna(0).sum())
+            else:
+                scmjm_sum = float(htzmjm)
+
             total_pages = 1 + extra_pages
             for p in range(total_pages):
                 p_sum_row = page1_start + p * page_len + 1
                 ws_hs.cell(p_sum_row, 2).value = str(cbdkzs)
                 ws_hs.cell(p_sum_row, 7).value = f"{float(htzmjm):.2f}亩"
-                ws_hs.cell(p_sum_row, 14).value = f"{float(htzmjm):.2f}亩"
+                ws_hs.cell(p_sum_row, 14).value = f"{float(scmjm_sum):.2f}亩"
 
             # 填充地块槽位：每4行一个地块
             for idx, land in enumerate(cbf_lands.to_dict('records')):
@@ -6677,7 +7104,7 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 p_sum_row = page1_start_gh + p * page_len + 2
                 ws_gh.cell(p_sum_row, 2).value = str(cbdkzs)
                 ws_gh.cell(p_sum_row, 8).value = f"{float(htzmjm):.2f}亩"
-                ws_gh.cell(p_sum_row, 15).value = f"{float(htzmjm):.2f}亩"
+                ws_gh.cell(p_sum_row, 15).value = f"{float(scmjm_sum):.2f}亩"
 
             # 填充地块槽位：每4行一个地块 (归户表)
             for idx, land in enumerate(cbf_lands.to_dict('records')):
@@ -6913,12 +7340,16 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 jzd_dict = {}
                 if not jzd_df.empty and 'JZDH' in jzd_df.columns:
                     for _, z in jzd_df.iterrows():
-                        jzd_dict[str(z['JZDH'])] = {
-                            'JZDH': str(z.get('JZDH', '')),
+                        pt_id = _normalize_point_id(z.get('JZDH'))
+                        if not pt_id:
+                            continue
+                        jzd_dict[pt_id] = {
+                            'JZDH': pt_id,
                             'BSM': str(z.get('BSM', '')),
                             'JBLX': str(z.get('JBLX', '')).strip(),
                             'JZDLX': str(z.get('JZDLX', '')).strip(),
                         }
+                jzd_point_coords = _build_jzd_point_coords(jzd_df)
 
                 # 代码直接映射列号（严格按照字典值匹配对应表头列位）
                 JBLX_CODE_TO_COL = {
@@ -6957,31 +7388,16 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                 wingdings_font = openpyxl.styles.Font(name='Wingdings', size=9.0)
 
                 def get_pt_info(pt_id):
-                    info = jzd_dict.get(str(pt_id), {})
+                    pt_id = _normalize_point_id(pt_id)
+                    info = jzd_dict.get(pt_id, {})
                     if isinstance(info, dict):
-                        jzdh_val = info.get('JZDH') or str(pt_id)
+                        jzdh_val = info.get('JZDH') or pt_id
                         jblx_code = str(info.get('JBLX', '6')).strip()
                     else:
-                        jzdh_val = str(info) or str(pt_id)
+                        jzdh_val = str(info) or pt_id
                         jblx_code = '6'
                     jblx_col = JBLX_CODE_TO_COL.get(jblx_code, 5)
                     return jzdh_val, jblx_col
-
-                def format_jzxsm_continuous(orig_sm, start_num, end_num):
-                    """
-                    规范化界址线说明，保证起点和终点为连续的 T1-T2, T2-T3...Tn-T1，
-                    避免共享界址线或原始数据中保留邻宗地文本导致的编号跳跃或重复。
-                    """
-                    orig = str(orig_sm).strip() if orig_sm else ''
-                    if not orig:
-                        return f'由T{start_num}至T{end_num}'
-                    if '沿' in orig:
-                        m = re.search(r'(沿.*?)(?:[至到](?:T\d+|\d+)?|$)', orig)
-                        if m:
-                            middle = m.group(1).rstrip('至').rstrip('到')
-                            return f'由T{start_num}{middle}至T{end_num}'
-                        return f'由T{start_num}至T{end_num}'
-                    return f'由T{start_num}{orig}至T{end_num}'
 
                 for _, land_item in cbf_lands.iterrows():
                     dkbm_item = str(land_item.get('DKBM', '')).strip()
@@ -7066,10 +7482,19 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                     # 提取界址线并进行拓扑闭环排序与点号解算
                     lines = []
                     ordered_pts = []
+                    parcel_point_coords = dict(jzd_point_coords)
+                    dk_fbfbm = dkbm_item[:14] if len(dkbm_item) >= 14 else fbfbm
+                    cur_fbffzrxm = fbf_map.get(dk_fbfbm, {}).get('FBFFZRXM', '') or fbffzrxm
                     if not jzx_df.empty and 'DKBM' in jzx_df.columns:
                         jzx_sub = jzx_df[jzx_df['DKBM'].astype(str).str.contains(dkbm_item, na=False)].copy()
                         if not jzx_sub.empty:
-                            lines, ordered_pts = chain_parcel_boundary(jzx_sub, dkbm_item)
+                            _add_jzx_endpoint_coords(parcel_point_coords, jzx_sub)
+                            lines, ordered_pts = order_parcel_boundary_from_northwest(
+                                jzx_sub,
+                                dkbm_item,
+                                point_coords=parcel_point_coords,
+                                dk_geom=vector_geom_by_dkbm.get(dkbm_item),
+                            )
 
                     num_lines = len(lines)
 
@@ -7143,7 +7568,18 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                             jzxlb_col = JZXLB_CODE_TO_COL.get(jzxlb_code, 7)
                             start_t = k + 1
                             end_t = 1 if (k + 1 == num_lines) else (k + 2)
-                            jzxsm_text = format_jzxsm_continuous(line.get('JZXSM', ''), start_t, end_t)
+                            next_pt_id = ordered_pts[(k + 1) % num_lines] if num_lines else ''
+                            direction_text = _direction_between_points(
+                                ordered_pts[k] if k < len(ordered_pts) else line.get('QJZDH'),
+                                next_pt_id,
+                                parcel_point_coords,
+                            )
+                            jzxsm_text = format_jzxsm_continuous(
+                                line.get('JZXSM', ''),
+                                start_t,
+                                end_t,
+                                direction_text=direction_text,
+                            )
 
                             c_jzxlb = ws_dk.cell(line_row, jzxlb_col)
                             c_jzxlb.value = CHECK_CHAR
@@ -7157,7 +7593,15 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                             c_jzxwz.font = wingdings_font
 
                             ws_dk.cell(line_row, 22).value = jzxsm_text
-                            ws_dk.cell(line_row, 26).value = line.get('PLDWQLR', cbfmc)
+                            ws_dk.cell(line_row, 26).value = resolve_pldwqlr(
+                                line,
+                                dkbm_item,
+                                cbfmc,
+                                cur_fbffzrxm,
+                                single_adjacent_owner,
+                                dk_to_cbfmc,
+                                mdb_cbfmc_set,
+                            )
 
                         if lines:
                             close_pt_row = 15 + num_lines * 2
@@ -7276,7 +7720,28 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                                 jzxlb_col = JZXLB_CODE_TO_COL.get(jzxlb_code, 7)
                                 start_t = g_idx + 1
                                 end_t = 1 if (g_idx + 1 == num_lines) else (g_idx + 2)
-                                jzxsm_text = format_jzxsm_continuous(line.get('JZXSM', ''), start_t, end_t)
+                                next_g_idx = g_idx + 1
+                                next_pt_id = (
+                                    ordered_pts[next_g_idx]
+                                    if next_g_idx < len(ordered_pts)
+                                    else str(line.get('ZJZDH', '')).strip()
+                                )
+                                direction_end_pt_id = (
+                                    ordered_pts[0]
+                                    if next_g_idx == num_lines and ordered_pts
+                                    else next_pt_id
+                                )
+                                direction_text = _direction_between_points(
+                                    ordered_pts[g_idx] if g_idx < len(ordered_pts) else line.get('QJZDH'),
+                                    direction_end_pt_id,
+                                    parcel_point_coords,
+                                )
+                                jzxsm_text = format_jzxsm_continuous(
+                                    line.get('JZXSM', ''),
+                                    start_t,
+                                    end_t,
+                                    direction_text=direction_text,
+                                )
 
                                 c_jzxlb = ws_dk.cell(line_row, jzxlb_col)
                                 c_jzxlb.value = CHECK_CHAR
@@ -7289,18 +7754,24 @@ def generate_yushe_yhzd_materials_only(mdb_file_path, shp_file_path, output_dire
                                 c_jzxwz.font = wingdings_font
 
                                 ws_dk.cell(line_row, 22).value = jzxsm_text
-                                ws_dk.cell(line_row, 26).value = line.get('PLDWQLR', cbfmc)
+                                ws_dk.cell(line_row, 26).value = resolve_pldwqlr(
+                                    line,
+                                    dkbm_item,
+                                    cbfmc,
+                                    cur_fbffzrxm,
+                                    single_adjacent_owner,
+                                    dk_to_cbfmc,
+                                    mdb_cbfmc_set,
+                                )
 
                                 # 线的下一端点
                                 next_pt_row = (cur_pt_start - 1) + (k + 1) * 2
-                                next_g_idx = g_idx + 1
                                 if next_g_idx == num_lines:
                                     # 闭合回起始点
                                     next_jzdh = first_pt_id
                                     next_pre = first_pt_pre
                                     next_col = first_jblx_col
                                 else:
-                                    next_pt_id = ordered_pts[next_g_idx] if next_g_idx < len(ordered_pts) else str(line.get('ZJZDH', '')).strip()
                                     next_jzdh, next_col = get_pt_info(next_pt_id)
                                     next_pre = f'J{next_g_idx + 1}'
 

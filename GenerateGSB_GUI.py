@@ -23,7 +23,8 @@ except ImportError:
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                             QLabel, QLineEdit, QPushButton, QFileDialog, QMessageBox, QGroupBox,
-                            QTextEdit, QScrollArea, QSplitter, QRadioButton, QButtonGroup, QTabWidget)
+                            QTextEdit, QScrollArea, QSplitter, QRadioButton, QButtonGroup, QTabWidget,
+                            QCheckBox)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QColor, QTextCursor
 from GenerateGSB import generate_gsb, generate_mdb_tables_only, generate_jinzhai_mdb_tables_only, generate_dkdc_tables_only, generate_hzzz_sms_only, generate_yhzd_cover_only, generate_jinzhai_gsb_only, generate_yushe_mdb_tables_only, generate_yushe_gsb_only, generate_fbfdc_table_only, generate_yhqd_table_only, generate_yjjsqd_table_only, generate_tsqt_statistics, generate_tsqt_statistics_xlsx, generate_jinzhai_survey_info_tables_only, generate_yushe_yhzd_materials_only
@@ -263,17 +264,18 @@ class GenerateYusheYHZDThread(QThread):
     finished = pyqtSignal(bool, str)
     progress = pyqtSignal(str)
 
-    def __init__(self, mdb_file, shp_file, output_dir):
+    def __init__(self, mdb_file, shp_file, output_dir, single_adjacent_owner=True):
         super().__init__()
         self.mdb_file = mdb_file
         self.shp_file = shp_file
         self.output_dir = output_dir
+        self.single_adjacent_owner = single_adjacent_owner
 
     def run(self):
         try:
             self.progress.emit("开始生成榆社县一户一档材料...")
-            logger.info(f"开始生成榆社县一户一档材料，参数：mdb={self.mdb_file}, shp={self.shp_file}, output={self.output_dir}")
-            generate_yushe_yhzd_materials_only(self.mdb_file, self.shp_file, self.output_dir)
+            logger.info(f"开始生成榆社县一户一档材料，参数：mdb={self.mdb_file}, shp={self.shp_file}, output={self.output_dir}, single_adjacent_owner={self.single_adjacent_owner}")
+            generate_yushe_yhzd_materials_only(self.mdb_file, self.shp_file, self.output_dir, single_adjacent_owner=self.single_adjacent_owner)
             logger.info("榆社县一户一档材料生成成功")
             self.finished.emit(True, "榆社县一户一档材料生成成功！")
         except Exception as e:
@@ -513,6 +515,12 @@ class MainWindow(QMainWindow):
         yushe_layout.addWidget(self.generate_yushe_radio)
         yushe_layout.addWidget(self.generate_yushe_gsb_radio)
         yushe_layout.addWidget(self.generate_yushe_yhzd_radio)
+
+        # 榆社县一户一档单一毗邻地物权利人选项（默认勾选）
+        self.single_pldw_checkbox = QCheckBox("单一毗邻地物权利人")
+        self.single_pldw_checkbox.setToolTip("默认勾选：公共界址线保留邻宗承包方名称；非公共界址线有 / 时保留当前 MDB 中存在的非本承包方名称，否则填写发包方负责人")
+        self.single_pldw_checkbox.setChecked(True)
+        yushe_layout.addWidget(self.single_pldw_checkbox)
         
         # 明光市布局
         mingguang_layout.addWidget(self.generate_fbfdc_radio)
@@ -859,7 +867,8 @@ class MainWindow(QMainWindow):
         elif self.current_function == "yushe_gsb":
             self.worker_thread = GenerateYusheGSBThread(mdb_file, shp_file, output_dir)
         elif self.current_function == "yushe_yhzd":
-            self.worker_thread = GenerateYusheYHZDThread(mdb_file, shp_file, output_dir)
+            single_pldw = self.single_pldw_checkbox.isChecked()
+            self.worker_thread = GenerateYusheYHZDThread(mdb_file, shp_file, output_dir, single_adjacent_owner=single_pldw)
         elif self.current_function == "fbfdc":
             self.worker_thread = GenerateFBFDCThread(mdb_file, output_dir)
         elif self.current_function == "yhqd":
